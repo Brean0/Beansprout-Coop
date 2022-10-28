@@ -61,6 +61,9 @@ contract BondNFT is ERC721Enumerable, Ownable, IBondNFT {
         require(_liquityDataAddresses.curveLUSD3CRVGauge != address(0), "BondNFT: _curveLUSD3CRVGauge must be non-zero");
         require(_liquityDataAddresses.curveLUSDFRAXGauge != address(0), "BondNFT: _curveLUSDFRAXGauge must be non-zero");
 
+        // TODO: 2 ways we can do this: 
+        // 1 -> get real art commissioned 
+        // 2 -> make fake funny art, the juxaposition would be great 
         artwork = IBondNFTArtwork(_initialArtworkAddress);
         transferLockoutPeriodSeconds = _transferLockoutPeriodSeconds;
         troveManager = ITroveManager(_liquityDataAddresses.troveManagerAddress);
@@ -109,6 +112,7 @@ contract BondNFT is ERC721Enumerable, Ownable, IBondNFT {
         return uint32(Math.min(_inputAmount / 1e18, type(uint32).max));
     }
 
+    // TODO: wtf does this do?
     function setFinalExtraData(address _bonder, uint256 _tokenID, uint256 _permanentSeed) external returns (uint80) {
         requireCallerIsChickenBondsManager();
 
