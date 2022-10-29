@@ -351,7 +351,7 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         * The user can decide how to handle chickenOuts if/when the recorded pendingLUSD is not fully backed by actual
         * LUSD in B.Protocol / the SP, by adjusting _minLUSD */
         // TODO: Beanstalk does not have this issue
-        uint256 lusdToWithdraw = _requireEnoughLUSDInBAMM(ond.lusdAmount, _minLUSD);
+        uint256 lusdToWithdraw = _requireEnoughLUSDInBAMM(bond.lusdAmount, _minLUSD);
 
         // Withdraw from B.Protocol LUSD vault
         // TODO: Change to transferDeposit back to user, take account season of deposit

@@ -5,6 +5,7 @@ import "./BaseTest.sol";
 import "./QuickSort.sol" as QuickSort;
 
 contract ChickenBondManagerTest is BaseTest {
+    
     function testSetupSetsBondNFTAddressInCBM() public {
         assertTrue(address(chickenBondManager.bondNFT()) == address(bondNFT));
     }

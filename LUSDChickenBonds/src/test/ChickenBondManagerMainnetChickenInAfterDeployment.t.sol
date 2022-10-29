@@ -19,6 +19,8 @@ contract ChickenBondManagerMainnetChickenInAfterDeployment is Test {
     address constant MAINNET_BLUSD_CURVE_GAUGE = 0xdA0DD1798BE66E17d5aB1Dc476302b56689C2DB4;
     address constant DEPLOYMENT_ADDRESS = 0x9B5715C99d3A9db84cAA904f9f442220651436e8;
     address constant LIQUITY_FUNDS_SAFE_ADDRESS = 0xF06016D822943C42e3Cb7FC3a6A3B1889C1045f8;
+    // brean code 
+    address constant FIRST_BONDER_ADDRESS = 0x9B5715C99d3A9db84cAA904f9f442220651436e8;
 
     ChickenBondManager constant chickenBondManager = ChickenBondManager(MAINNET_CHICKEN_BOND_MANAGER_ADDRESS);
     IERC20 constant lusdToken = IERC20(MAINNET_LUSD_TOKEN_ADDRESS);
@@ -53,7 +55,7 @@ contract ChickenBondManagerMainnetChickenInAfterDeployment is Test {
         (,, uint256 bondStartTime,,) = chickenBondManager.getBondData(bondID);
         vm.warp(bondStartTime + BOOTSTRAP_PERIOD_CHICKEN_IN - 1);
 
-        vm.startPrank(LIQUITY_FUNDS_SAFE_ADDRESS);
+        vm.startPrank(FIRST_BONDER_ADDRESS);
         vm.expectRevert("CBM: First chicken in must wait until bootstrap period is over");
         chickenBondManager.chickenIn(bondID);
         vm.stopPrank();
@@ -65,9 +67,9 @@ contract ChickenBondManagerMainnetChickenInAfterDeployment is Test {
         (,, uint256 bondStartTime,,) = chickenBondManager.getBondData(bondID);
         vm.warp(bondStartTime + BOOTSTRAP_PERIOD_CHICKEN_IN);
 
-        assertEq(bLUSDToken.balanceOf(LIQUITY_FUNDS_SAFE_ADDRESS), 0, "bLUSD balance should be zero before Chicken In");
+        assertEq(bLUSDToken.balanceOf(FIRST_BONDER_ADDRESS), 0, "bLUSD balance should be zero before Chicken In");
 
-        vm.startPrank(LIQUITY_FUNDS_SAFE_ADDRESS);
+        vm.startPrank(FIRST_BONDER_ADDRESS);
         chickenBondManager.chickenIn(bondID);
         vm.stopPrank();
 
