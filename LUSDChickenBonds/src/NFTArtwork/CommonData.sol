@@ -14,8 +14,8 @@ struct CommonData {
     uint256 tokenID;
 
     // ChickenBondManager.BondData
-    uint256 lusdAmount;
-    uint256 claimedBLUSD;
+    uint256 beanAmount;
+    uint256 claimedBBEAN;
     uint256 startTime;
     uint256 endTime;
     uint8 status;

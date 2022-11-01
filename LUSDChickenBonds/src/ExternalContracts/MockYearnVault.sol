@@ -9,7 +9,7 @@ import "forge-std/console.sol";
 
 
 contract MockYearnVault is ERC20, Ownable {
-    // IBLUSDToken public bLUSDToken;
+    // IBBEANToken public bBEANToken;
     LUSDTokenTester public token;
 
     constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) {}

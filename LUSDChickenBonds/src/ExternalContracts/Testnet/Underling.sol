@@ -7,8 +7,8 @@ import "./ERC20Faucet.sol";
 
 contract Underling {
     IChickenBondManager public immutable chickenBondManager;
-    ERC20Faucet public immutable lusdToken;
-    IERC20 public immutable bLUSDToken;
+    ERC20Faucet public immutable beanToken;
+    IERC20 public immutable bBEANToken;
     ICurveCryptoPool public immutable bLUSDCurvePool;
 
     address public overlord;
@@ -20,8 +20,8 @@ contract Underling {
         address _bLUSDCurvePoolAddress
     ) {
         chickenBondManager = IChickenBondManager(_chickenBondManagerAddress);
-        lusdToken = ERC20Faucet(_lusdTokenAddress);
-        bLUSDToken = IERC20(_bLUSDTokenAddress);
+        beanToken = ERC20Faucet(_lusdTokenAddress);
+        bBEANToken = IERC20(_bLUSDTokenAddress);
         bLUSDCurvePool = ICurveCryptoPool(_bLUSDCurvePoolAddress);
 
         // Prevent implementation from being taken over
@@ -39,11 +39,11 @@ contract Underling {
     }
 
     function tap() external onlyOverlord {
-        lusdToken.tap();
+        beanToken.tap();
     }
 
     function createBond(uint256 _amount) external onlyOverlord {
-        lusdToken.approve(address(chickenBondManager), _amount);
+        beanToken.approve(address(chickenBondManager), _amount);
         chickenBondManager.createBond(_amount);
     }
 
@@ -56,14 +56,14 @@ contract Underling {
     }
 
     function exchange(uint256 _i, uint256 _j, uint256 _dx, uint256 _minDy) external onlyOverlord {
-        IERC20 inputToken = _i == 0 ? bLUSDToken : lusdToken;
+        IERC20 inputToken = _i == 0 ? bBEANToken : beanToken;
         inputToken.approve(address(bLUSDCurvePool), _dx);
         bLUSDCurvePool.exchange(_i, _j, _dx, _minDy);
     }
 
-    function addLiquidity(uint256 _bLUSDAmount, uint256 _lusdAmount) external onlyOverlord {
-        bLUSDToken.approve(address(bLUSDCurvePool), _bLUSDAmount);
-        lusdToken.approve(address(bLUSDCurvePool), _lusdAmount);
-        bLUSDCurvePool.add_liquidity([_bLUSDAmount, _lusdAmount], 0);
+    function addLiquidity(uint256 _bLUSDAmount, uint256 _beanAmount) external onlyOverlord {
+        bBEANToken.approve(address(bLUSDCurvePool), _bLUSDAmount);
+        beanToken.approve(address(bLUSDCurvePool), _beanAmount);
+        bLUSDCurvePool.add_liquidity([_bLUSDAmount, _beanAmount], 0);
     }
 }

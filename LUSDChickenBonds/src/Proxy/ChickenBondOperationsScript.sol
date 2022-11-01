@@ -12,8 +12,8 @@ import "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 contract ChickenBondOperationsScript {
     IChickenBondManager immutable chickenBondManager;
-    IERC20 immutable lusdToken;
-    IERC20 immutable bLUSDToken;
+    IERC20 immutable beanToken;
+    IERC20 immutable bBEANToken;
     ICurvePool immutable curvePool;
     IYearnVault immutable public yearnCurveVault;
 
@@ -23,62 +23,62 @@ contract ChickenBondOperationsScript {
         require(Address.isContract(address(_chickenBondManager)), "ChickenBondManager is not a contract");
 
         chickenBondManager = _chickenBondManager;
-        lusdToken = _chickenBondManager.lusdToken();
-        bLUSDToken = _chickenBondManager.bLUSDToken();
+        beanToken = _chickenBondManager.beanToken();
+        bBEANToken = _chickenBondManager.bBEANToken();
         curvePool = _chickenBondManager.curvePool();
         yearnCurveVault = _chickenBondManager.yearnCurveVault();
 
         INDEX_OF_LUSD_TOKEN_IN_CURVE_POOL = _chickenBondManager.INDEX_OF_LUSD_TOKEN_IN_CURVE_POOL();
     }
 
-    function createBond(uint256 _lusdAmount) external {
+    function createBond(uint256 _beanAmount) external {
         // Pull LUSD from owner if needed
-        uint256 proxyBalance = lusdToken.balanceOf(address(this));
-        if (proxyBalance < _lusdAmount) {
-            lusdToken.transferFrom(msg.sender, address(this), _lusdAmount - proxyBalance);
+        uint256 proxyBalance = beanToken.balanceOf(address(this));
+        if (proxyBalance < _beanAmount) {
+            beanToken.transferFrom(msg.sender, address(this), _beanAmount - proxyBalance);
         }
 
         // Approve LUSD
-        lusdToken.approve(address(chickenBondManager), _lusdAmount);
+        beanToken.approve(address(chickenBondManager), _beanAmount);
 
-        chickenBondManager.createBond(_lusdAmount);
+        chickenBondManager.createBond(_beanAmount);
     }
 
     function chickenOut(uint256 _bondID, uint256 _minLUSD) external {
-        (uint256 lusdAmount,,,,) = chickenBondManager.getBondData(_bondID);
-        assert(lusdAmount > 0);
+        (uint256 beanAmount,,,,) = chickenBondManager.getBondData(_bondID);
+        assert(beanAmount > 0);
 
         // Chicken out
         chickenBondManager.chickenOut(_bondID, _minLUSD);
 
         // send LUSD to owner
-        lusdToken.transfer(msg.sender, lusdAmount);
+        beanToken.transfer(msg.sender, beanAmount);
     }
 
     function chickenIn(uint256 _bondID) external {
-        uint256 balanceBefore = bLUSDToken.balanceOf(address(this));
+        uint256 balanceBefore = bBEANToken.balanceOf(address(this));
 
         // Chicken in
         chickenBondManager.chickenIn(_bondID);
 
-        uint256 balanceAfter = bLUSDToken.balanceOf(address(this));
+        uint256 balanceAfter = bBEANToken.balanceOf(address(this));
         assert(balanceAfter > balanceBefore);
 
         // send bLUSD to owner
-        bLUSDToken.transfer(msg.sender, balanceAfter - balanceBefore);
+        bBEANToken.transfer(msg.sender, balanceAfter - balanceBefore);
     }
 
     function redeem(uint256 _bLUSDToRedeem, uint256 _minLUSDFromBAMMSPVault) external {
         // pull first bLUSD if needed:
-        uint256 proxyBalance = bLUSDToken.balanceOf(address(this));
+        uint256 proxyBalance = bBEANToken.balanceOf(address(this));
         if (proxyBalance < _bLUSDToRedeem) {
-            bLUSDToken.transferFrom(msg.sender, address(this), _bLUSDToRedeem - proxyBalance);
+            bBEANToken.transferFrom(msg.sender, address(this), _bLUSDToRedeem - proxyBalance);
         }
 
         (uint256 lusdFromBAMMSPVault,uint256 yTokensFromCurveVault) = chickenBondManager.redeem(_bLUSDToRedeem, _minLUSDFromBAMMSPVault);
 
         // Send LUSD to the redeemer
-        if (lusdFromBAMMSPVault > 0) {lusdToken.transfer(msg.sender, lusdFromBAMMSPVault);}
+        if (lusdFromBAMMSPVault > 0) {beanToken.transfer(msg.sender, lusdFromBAMMSPVault);}
 
         // Send yTokens to the redeemer
         if (yTokensFromCurveVault > 0) {yearnCurveVault.transfer(msg.sender, yTokensFromCurveVault);}
@@ -86,15 +86,15 @@ contract ChickenBondOperationsScript {
 
     function redeemAndWithdraw(uint256 _bLUSDToRedeem, uint256 _minLUSDFromBAMMSPVault) external {
         // pull first bLUSD if needed:
-        uint256 proxyBalance = bLUSDToken.balanceOf(address(this));
+        uint256 proxyBalance = bBEANToken.balanceOf(address(this));
         if (proxyBalance < _bLUSDToRedeem) {
-            bLUSDToken.transferFrom(msg.sender, address(this), _bLUSDToRedeem - proxyBalance);
+            bBEANToken.transferFrom(msg.sender, address(this), _bLUSDToRedeem - proxyBalance);
         }
 
         (uint256 lusdFromBAMMSPVault,uint256 yTokensFromCurveVault) = chickenBondManager.redeem(_bLUSDToRedeem, _minLUSDFromBAMMSPVault);
 
         // The LUSD deltas from SP/Curve withdrawals are the amounts to send to the redeemer
-        uint256 lusdBalanceBefore = lusdToken.balanceOf(address(this));
+        uint256 lusdBalanceBefore = beanToken.balanceOf(address(this));
         uint256 LUSD3CRVBalanceBefore = curvePool.balanceOf(address(this));
 
         // Withdraw obtained yTokens from both vaults
@@ -107,11 +107,11 @@ contract ChickenBondOperationsScript {
             curvePool.remove_liquidity_one_coin(LUSD3CRVBalanceDelta, INDEX_OF_LUSD_TOKEN_IN_CURVE_POOL, 0);
         }
 
-        uint256 lusdBalanceDelta = lusdToken.balanceOf(address(this)) - lusdBalanceBefore;
+        uint256 lusdBalanceDelta = beanToken.balanceOf(address(this)) - lusdBalanceBefore;
         uint256 totalReceivedLUSD = lusdFromBAMMSPVault + lusdBalanceDelta;
         require(totalReceivedLUSD > 0, "Obtained LUSD amount must be > 0");
 
         // Send the LUSD to the redeemer
-        lusdToken.transfer(msg.sender, totalReceivedLUSD);
+        beanToken.transfer(msg.sender, totalReceivedLUSD);
     }
 }

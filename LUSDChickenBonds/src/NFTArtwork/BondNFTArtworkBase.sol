@@ -88,12 +88,12 @@ contract BondNFTArtworkCommon is EggTraitWeights {
     // Private functions //
     ///////////////////////
 
-    function _getSize(uint256 lusdAmount) private pure returns (Size) {
+    function _getSize(uint256 beanAmount) private pure returns (Size) {
         return (
-            lusdAmount <    1_000e18 ?  Size.Tiny   :
-            lusdAmount <   10_000e18 ?  Size.Small  :
-            lusdAmount <  100_000e18 ?  Size.Normal :
-         /* lusdAmount >= 100_000e18 */ Size.Big
+            beanAmount <    1_000e18 ?  Size.Tiny   :
+            beanAmount <   10_000e18 ?  Size.Small  :
+            beanAmount <  100_000e18 ?  Size.Normal :
+         /* beanAmount >= 100_000e18 */ Size.Big
         );
     }
 
@@ -104,7 +104,7 @@ contract BondNFTArtworkCommon is EggTraitWeights {
         _data.cardColor   = _getCardColor  (_cutDNA(dna, 26, 27), _data.borderColor);
         _data.shellColor  = _getShellColor (_cutDNA(dna, 53, 27), _data.borderColor);
 
-        _data.size = _getSize(_data.lusdAmount);
+        _data.size = _getSize(_data.beanAmount);
     }
 
     function _getSolidBorderColor(EggTraitWeights.BorderColor _color)
@@ -193,7 +193,7 @@ contract BondNFTArtworkCommon is EggTraitWeights {
         return abi.encodePacked(
             '"attributes":[',
                 '{"display_type":"date","trait_type":"Created","value":', _data.startTime.toString(), '},',
-                '{"display_type":"number","trait_type":"Bond Amount","value":', _formatDecimal(_data.lusdAmount), '},',
+                '{"display_type":"number","trait_type":"Bond Amount","value":', _formatDecimal(_data.beanAmount), '},',
                 '{"trait_type":"Bond Status","value":"', _getBondStatusName(IChickenBondManager.BondStatus(_data.status)), '"},',
                 _getMetadataCommonDerivedAttributes(_data),
                 _extraAttributes,
@@ -405,14 +405,14 @@ contract BondNFTArtworkCommon is EggTraitWeights {
         returns (bytes memory)
     {
         string memory tokenID = string(abi.encodePacked('ID: ', _data.tokenIDString));
-        string memory lusdAmount = _formatDecimal(_data.lusdAmount);
+        string memory beanAmount = _formatDecimal(_data.beanAmount);
         string memory startTime = _formatDate(_data.startTime);
 
         return abi.encodePacked(
             _getSVGTextTag('LUSD',     'y="14%" font-size="72px"'),
             _getSVGTextTag(tokenID,    'y="19%" font-size="30px"'),
             _getSVGTextTag(_subtitle,  'y="72%" font-size="40px"'),
-            _getSVGTextTag(lusdAmount, 'y="81%" font-size="64px"'),
+            _getSVGTextTag(beanAmount, 'y="81%" font-size="64px"'),
             _getSVGTextTag(startTime,  'y="91%" font-size="30px" opacity="0.6"')
         );
     }
@@ -446,8 +446,8 @@ abstract contract BondNFTArtworkBase is IBondNFTArtwork {
         data.curveGaugeSlopes = _bondExtraData.curveGaugeSlopes;
 
         (
-            data.lusdAmount,
-            data.claimedBLUSD,
+            data.beanAmount,
+            data.claimedBBEAN,
             data.startTime,
             data.endTime,
             data.status

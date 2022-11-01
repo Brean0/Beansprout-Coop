@@ -12,8 +12,8 @@ contract SimpleEggArtwork is IBondNFTArtwork {
 
     struct BondData {
         uint256 tokenID;
-        uint256 lusdAmount;
-        uint256 claimedBLUSD;
+        uint256 beanAmount;
+        uint256 claimedBBEAN;
         uint256 startTime;
         uint256 endTime;
         uint80 initialHalfDna;
@@ -28,8 +28,8 @@ contract SimpleEggArtwork is IBondNFTArtwork {
         BondData memory bondData;
         bondData.tokenID = _tokenID;
         (
-            bondData.lusdAmount,
-            bondData.claimedBLUSD,
+            bondData.beanAmount,
+            bondData.claimedBBEAN,
             bondData.startTime,
             bondData.endTime,
             bondData.status
@@ -121,7 +121,7 @@ contract SimpleEggArtwork is IBondNFTArtwork {
         return abi.encodePacked(
             '<text fill="#fff" font-family="''Arial Black'', Arial" font-size="40px" font-weight="800" text-anchor="middle" x="50%" y="755">BOND AMOUNT</text>',
             '<text fill="#fff" font-family="''Arial Black'', Arial" font-size="64px" font-weight="800" text-anchor="middle" x="50%" y="848">',
-                ((_bondData.lusdAmount + 0.5e18) / 1e18).toString(),
+                ((_bondData.beanAmount + 0.5e18) / 1e18).toString(),
             '</text>',
             '<text fill="#fff" font-family="''Arial Black'', Arial" font-size="30px" font-weight="800" text-anchor="middle" x="50%" y="950" opacity="0.6">',
                 _getMonthString(DateTime.getMonth(_bondData.startTime)),

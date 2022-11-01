@@ -10,7 +10,7 @@ import "forge-std/console.sol";
 
 
 contract MockCurvePool is ERC20, Ownable, ICurvePool {
-    LUSDTokenTester public lusdToken;
+    LUSDTokenTester public beanToken;
 
     uint256 private constant DEFAULT_PRANK_PRICE = 1e18;
     uint256 private nextPrankPrice = DEFAULT_PRANK_PRICE;
@@ -18,16 +18,16 @@ contract MockCurvePool is ERC20, Ownable, ICurvePool {
     constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) {}
 
     function setAddresses(address _lusdTokenAddress) external onlyOwner {
-        lusdToken = LUSDTokenTester(_lusdTokenAddress);
+        beanToken = LUSDTokenTester(_lusdTokenAddress);
     }
 
     function add_liquidity(uint256[2] memory _amounts, uint256) public returns (uint256) {
         nextPrankPrice = DEFAULT_PRANK_PRICE;
 
-        uint256 lusdAmount = _amounts[0];
-        lusdToken.transferFrom(msg.sender, address(this), lusdAmount);
+        uint256 beanAmount = _amounts[0];
+        beanToken.transferFrom(msg.sender, address(this), beanAmount);
        
-        uint256 lpShares = lusdAmount; // mock 1:1 shares:tokens
+        uint256 lpShares = beanAmount; // mock 1:1 shares:tokens
         _mint(msg.sender, lpShares);
 
         return lpShares;
@@ -40,8 +40,8 @@ contract MockCurvePool is ERC20, Ownable, ICurvePool {
     function remove_liquidity_one_coin(uint256 _burn_amount, int128, uint256) public {
         nextPrankPrice = DEFAULT_PRANK_PRICE;
 
-        uint lusdAmount = _burn_amount; // mock 1:1 shares:tokens
-        lusdToken.transfer(msg.sender, lusdAmount);
+        uint beanAmount = _burn_amount; // mock 1:1 shares:tokens
+        beanToken.transfer(msg.sender, beanAmount);
 
         _burn(msg.sender, _burn_amount);
     }
@@ -97,7 +97,7 @@ contract MockCurvePool is ERC20, Ownable, ICurvePool {
         _mint(_account, _amount);
 
         // Maintain 1:1 ratio between LP shares and LUSD in the pool
-        lusdToken.unprotectedMint(address(this), _amount);
+        beanToken.unprotectedMint(address(this), _amount);
     }
 
     function get_virtual_price() external pure returns (uint256) {

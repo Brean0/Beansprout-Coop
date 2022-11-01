@@ -26,32 +26,32 @@ contract DevTestSetup is BaseTest {
 
         // Deploy a mock token then assign its interface
         LUSDTokenTester mockLUSDToken = new LUSDTokenTester(ZERO_ADDRESS,ZERO_ADDRESS, ZERO_ADDRESS);
-        lusdToken = IERC20Permit(address(mockLUSDToken));
+        beanToken = IERC20Permit(address(mockLUSDToken));
 
         (A, B, C, D, yearnGovernanceAddress) = (accountsList[0], accountsList[1], accountsList[2], accountsList[3], accountsList[9]);
 
         // Give some LUSD to test accounts
         uint256 initialLUSDAmount = 2000e18;
-        deal(address(lusdToken), A, initialLUSDAmount);
-        deal(address(lusdToken), B, initialLUSDAmount);
-        deal(address(lusdToken), C, initialLUSDAmount);
-        deal(address(lusdToken), D, initialLUSDAmount);
+        deal(address(beanToken), A, initialLUSDAmount);
+        deal(address(beanToken), B, initialLUSDAmount);
+        deal(address(beanToken), C, initialLUSDAmount);
+        deal(address(beanToken), D, initialLUSDAmount);
 
         // Check accounts are funded
-        assertEq(lusdToken.balanceOf(A), initialLUSDAmount);
-        assertEq(lusdToken.balanceOf(B), initialLUSDAmount);
-        assertEq(lusdToken.balanceOf(C), initialLUSDAmount);
-        assertEq(lusdToken.balanceOf(D), initialLUSDAmount);
+        assertEq(beanToken.balanceOf(A), initialLUSDAmount);
+        assertEq(beanToken.balanceOf(B), initialLUSDAmount);
+        assertEq(beanToken.balanceOf(C), initialLUSDAmount);
+        assertEq(beanToken.balanceOf(D), initialLUSDAmount);
 
         // Deploy external mock contracts, and assign corresponding interfaces
         MockCurvePool mockCurvePool = new MockCurvePool("LUSD-3CRV Pool", "LUSD3CRV-f");
-        mockCurvePool.setAddresses(address(lusdToken));
+        mockCurvePool.setAddresses(address(beanToken));
         curvePool = ICurvePool(address(mockCurvePool));
 
         MockCurvePool mockCurveBasePool = new MockCurvePool("3CRV Pool", "3CRV");
         curveBasePool = ICurvePool(address(mockCurveBasePool));
 
-        MockBAMMSPVault mockBAMMSPVault = new MockBAMMSPVault(address(lusdToken));
+        MockBAMMSPVault mockBAMMSPVault = new MockBAMMSPVault(address(beanToken));
         bammSPVault = IBAMM(address(mockBAMMSPVault));
 
         MockYearnVault mockYearnCurveVault = new MockYearnVault("Curve LUSD Pool yVault", "yvCurve-LUSD");
@@ -65,7 +65,7 @@ contract DevTestSetup is BaseTest {
         yearnRegistry = IYearnRegistry(address(mockYearnRegistry));
 
         // Deploy core ChickenBonds system
-        bLUSDToken = new BLUSDToken("bLUSDToken", "BLUSD");
+        bBEANToken = new BLUSDToken("bBEANToken", "BLUSD");
 
         BondNFT.LiquityDataAddresses memory liquityDataAddresses = BondNFT.LiquityDataAddresses({
             troveManagerAddress: address(new MockTroveManager()),
@@ -92,8 +92,8 @@ contract DevTestSetup is BaseTest {
 
         ChickenBondManager.ExternalAdresses memory externalContractAddresses = ChickenBondManager.ExternalAdresses({
             bondNFTAddress: address(bondNFT),
-            lusdTokenAddress: address(lusdToken),
-            bLUSDTokenAddress: address(bLUSDToken),
+            lusdTokenAddress: address(beanToken),
+            bLUSDTokenAddress: address(bBEANToken),
             curvePoolAddress: address(curvePool),
             curveBasePoolAddress: address(curveBasePool),
             bammSPVaultAddress: address(bammSPVault),
@@ -129,7 +129,7 @@ contract DevTestSetup is BaseTest {
         chickenBondManager = new ChickenBondManagerWrap(externalContractAddresses, params);
 
         bondNFT.setAddresses(address(chickenBondManager));
-        bLUSDToken.setAddresses(address(chickenBondManager));
+        bBEANToken.setAddresses(address(chickenBondManager));
 
         CHICKEN_IN_AMM_FEE = chickenBondManager.CHICKEN_IN_AMM_FEE();
         MIN_BLUSD_SUPPLY = chickenBondManager.MIN_BLUSD_SUPPLY();

@@ -43,9 +43,9 @@ const main = async () => {
 
   const {
     prankster,
-    lusdToken,
+    beanToken,
     chickenBondManager,
-    bLUSDToken,
+    bBEANToken,
     bLUSDCurvePool,
     bLUSDCurveToken,
     curveLiquidityGauge
@@ -104,11 +104,11 @@ const main = async () => {
   const pending = numberify(await chickenBondManager.getPendingLUSD());
   const acquired = numberify(await chickenBondManager.getTotalAcquiredLUSD());
   const permanent = numberify(await chickenBondManager.getPermanentLUSD());
-  const bLUSDSupply = numberify(await bLUSDToken.totalSupply());
+  const bLUSDSupply = numberify(await bBEANToken.totalSupply());
   const oraclePrice = 1 / numberify(await bLUSDCurvePool.price_oracle());
   const lpPrice = oraclePrice * numberify(await bLUSDCurvePool.lp_price());
   const lpSupply = numberify(await bLUSDCurveToken.totalSupply());
-  const lpReward = numberify(await lusdToken.balanceOf(curveLiquidityGauge.address));
+  const lpReward = numberify(await beanToken.balanceOf(curveLiquidityGauge.address));
 
   console.log();
   console.log("pending:", pending);

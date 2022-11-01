@@ -8,13 +8,13 @@ import "../../Interfaces/IBAMM.sol";
 import { IYieldReceiver } from "./Harvester.sol";
 
 contract TestnetBAMM is IBAMM, IYieldReceiver, Ownable {
-    IERC20 public immutable lusdToken;
+    IERC20 public immutable beanToken;
     address public chicken;
 
     uint256 private _lusdValue;
 
     constructor(address _lusdTokenAddress) {
-        lusdToken = IERC20(_lusdTokenAddress);
+        beanToken = IERC20(_lusdTokenAddress);
     }
 
     modifier onlyChicken() {
@@ -22,17 +22,17 @@ contract TestnetBAMM is IBAMM, IYieldReceiver, Ownable {
         _;
     }
 
-    function deposit(uint256 _lusdAmount) external onlyChicken {
-        _lusdValue += _lusdAmount;
-        lusdToken.transferFrom(msg.sender, address(this), _lusdAmount);
+    function deposit(uint256 _beanAmount) external onlyChicken {
+        _lusdValue += _beanAmount;
+        beanToken.transferFrom(msg.sender, address(this), _beanAmount);
     }
 
-    function withdraw(uint256 _lusdAmount, address _to) external onlyChicken {
-        _lusdValue -= _lusdAmount;
-        lusdToken.transfer(_to, _lusdAmount);
+    function withdraw(uint256 _beanAmount, address _to) external onlyChicken {
+        _lusdValue -= _beanAmount;
+        beanToken.transfer(_to, _beanAmount);
     }
 
-    function swap(uint lusdAmount, uint minEthReturn, address payable dest) public returns(uint) {}
+    function swap(uint beanAmount, uint minEthReturn, address payable dest) public returns(uint) {}
 
     function getSwapEthAmount(uint lusdQty) public view returns(uint ethAmount, uint feeLusdAmount) {}
 
@@ -56,7 +56,7 @@ contract TestnetBAMM is IBAMM, IYieldReceiver, Ownable {
 
     function _notifyYield(uint256 _amount) external onlyOwner {
         require(
-            lusdToken.balanceOf(address(this)) >= _lusdValue + _amount,
+            beanToken.balanceOf(address(this)) >= _lusdValue + _amount,
             "TestnetBAMM: yield more than LUSD balance increase"
         );
 

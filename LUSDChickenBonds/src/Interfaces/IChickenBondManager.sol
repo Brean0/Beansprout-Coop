@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.10;
 
-import "./ILUSDToken.sol";
-import "./IBLUSDToken.sol";
+import "./IBEANToken.sol";
+import "./IBBEANToken.sol";
 import "./ICurvePool.sol";
 import "./IYearnVault.sol";
 import "./IBAMM.sol";
@@ -16,15 +16,17 @@ interface IChickenBondManager {
         chickenedIn
     }
 
-    function lusdToken() external view returns (ILUSDToken);
-    function bLUSDToken() external view returns (IBLUSDToken);
+    function beanToken() external view returns (IBEANToken);
+    function bBEANToken() external view returns (IBBEANToken);
     function curvePool() external view returns (ICurvePool);
-    function bammSPVault() external view returns (IBAMM);
-    function yearnCurveVault() external view returns (IYearnVault);
+    //function bammSPVault() external view returns (IBAMM);
+    //function yearnCurveVault() external view returns (IYearnVault);
+    function beanstalk() external view returns (IBeanstalk);
+
     // constants
     function INDEX_OF_LUSD_TOKEN_IN_CURVE_POOL() external pure returns (int128);
 
-    function createBond(uint256 _lusdAmount) external returns (uint256);
+    function createBond(uint256 _beanAmount) external returns (uint256);
     function createBondWithPermit(
         address owner, 
         uint256 amount, 
@@ -39,7 +41,7 @@ interface IChickenBondManager {
 
     // getters
     function calcRedemptionFeePercentage(uint256 _fractionOfBLUSDToRedeem) external view returns (uint256);
-    function getBondData(uint256 _bondID) external view returns (uint256 lusdAmount, uint64 claimedBLUSD, uint64 startTime, uint64 endTime, uint8 status);
+    function getBondData(uint256 _bondID) external view returns (uint256 beanAmount, uint64 claimedBBEAN, uint64 startTime, uint64 endTime, uint8 status);
     function getLUSDToAcquire(uint256 _bondID) external view returns (uint256);
     function calcAccruedBLUSD(uint256 _bondID) external view returns (uint256);
     function calcBondBLUSDCap(uint256 _bondID) external view returns (uint256);

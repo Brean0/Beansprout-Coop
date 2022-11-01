@@ -68,7 +68,7 @@ formatJson() {
   echo '}'
 }
 
-lusdToken=$(deploy LUSDTokenTester ${zeroAddress} ${zeroAddress} ${zeroAddress})
+beanToken=$(deploy LUSDTokenTester ${zeroAddress} ${zeroAddress} ${zeroAddress})
 curvePool=$(deploy MockCurvePool 'LUSD-3CRV Pool' 'LUSD3CRV-f')
 yearnLUSDVault=$(deploy MockYearnVault 'LUSD yVault' 'yvLUSD')
 yearnCurveVault=$(deploy MockYearnVault 'Curve LUSD Pool yVault' 'yvCurve-LUSD')
@@ -77,7 +77,7 @@ deployYearnRegistryCmd=(
   deploy MockYearnRegistry
     ${yearnLUSDVault}
     ${yearnCurveVault}
-    ${lusdToken}
+    ${beanToken}
     ${curvePool}
 )
 
@@ -88,7 +88,7 @@ bondNFT=$(deploy BondNFT 'LUSDBondNFT' 'LUSDBOND')
 deployChickenBondManagerCmd=(
   deploy ChickenBondManager
     ${bondNFT}
-    ${lusdToken}
+    ${beanToken}
     ${curvePool}
     ${yearnLUSDVault}
     ${yearnCurveVault}
@@ -107,7 +107,7 @@ send ${bondNFT} 'setAddresses(address)' ${chickenBondManager}
 send ${sLUSDToken} 'setAddresses(address)' ${chickenBondManager}
 
 fields=(
-  lusdToken
+  beanToken
   curvePool
   yearnLUSDVault
   yearnCurveVault

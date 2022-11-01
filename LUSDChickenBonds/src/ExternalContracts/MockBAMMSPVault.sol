@@ -8,33 +8,33 @@ import "forge-std/console.sol";
 
 
 contract MockBAMMSPVault is IBAMM {
-    LUSDTokenTester public lusdToken;
+    LUSDTokenTester public beanToken;
     uint256 lusdValue;
 
     constructor(address _lusdTokenAddress) {
-        lusdToken = LUSDTokenTester(_lusdTokenAddress);
+        beanToken = LUSDTokenTester(_lusdTokenAddress);
     }
 
-    function deposit(uint256 _lusdAmount) external {
-        lusdValue += _lusdAmount;
-        lusdToken.transferFrom(msg.sender, address(this), _lusdAmount);
+    function deposit(uint256 _beanAmount) external {
+        lusdValue += _beanAmount;
+        beanToken.transferFrom(msg.sender, address(this), _beanAmount);
 
         return;
     }
 
-    function withdraw (uint256 _lusdAmount, address _to) external {
-        lusdValue -= _lusdAmount;
-        lusdToken.transfer(_to, _lusdAmount);
+    function withdraw (uint256 _beanAmount, address _to) external {
+        lusdValue -= _beanAmount;
+        beanToken.transfer(_to, _beanAmount);
 
         return;
     }
 
-    function swap(uint lusdAmount, uint minEthReturn, address payable dest) public returns(uint) {}
+    function swap(uint beanAmount, uint minEthReturn, address payable dest) public returns(uint) {}
 
     function getSwapEthAmount(uint lusdQty) public view returns(uint ethAmount, uint feeLusdAmount) {}
 
     function getLUSDValue() external view returns (uint256, uint256, uint256) {
-        uint256 lusdBalance = lusdToken.balanceOf(address(this));
+        uint256 lusdBalance = beanToken.balanceOf(address(this));
         return (lusdValue, lusdBalance, 0);
     }
 

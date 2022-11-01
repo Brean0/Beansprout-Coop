@@ -42,7 +42,7 @@ const main = async () => {
     }
   });
 
-  const { lusdToken, bondNFT, chickenBondManager, lqtyStaking, troveManager, curveGaugeController } =
+  const { beanToken, bondNFT, chickenBondManager, lqtyStaking, troveManager, curveGaugeController } =
     connectToContracts(deployer, deployment.manifest.addresses);
 
   const createBond = async (amount: Decimalish) => {
@@ -61,8 +61,8 @@ const main = async () => {
 
   // Enable chicken-ins
 
-  await lusdToken.tap().then(txWait);
-  await lusdToken.approve(chickenBondManager.address, MaxUint256).then(txWait);
+  await beanToken.tap().then(txWait);
+  await beanToken.approve(chickenBondManager.address, MaxUint256).then(txWait);
   await createBond(100);
 
   const { startTime } = await chickenBondManager.getBondData(1);

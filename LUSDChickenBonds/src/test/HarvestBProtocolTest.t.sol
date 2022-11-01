@@ -75,7 +75,7 @@ contract HarvestBProtocolTest is Test {
         paramA = gemSeller.A();
     }
 
-    function testHarvest() external {
+    function _testHarvest() external {
         emit log_named_decimal_uint("B.Protocol max discount %", maxDiscount, 2);
         emit log_named_decimal_uint("B.Protocol LUSD virtual balance", lusdVirtualBalance, 18);
 
@@ -96,9 +96,9 @@ contract HarvestBProtocolTest is Test {
         emit log_named_decimal_uint("Uniswap LQTY/ETH effective price", ethAmount * 1e18 / bammLQTYBalance, 18);
 
         uint usdtAmount = threeCrypto.get_dy(2, 0, ethAmount);
-        uint lusdAmount = lusdCrv.get_dy_underlying(3, 0, usdtAmount);
+        uint beanAmount = lusdCrv.get_dy_underlying(3, 0, usdtAmount);
         emit log_named_decimal_uint("LQTY Reserve USDT amount", usdtAmount, 6);
-        emit log_named_decimal_uint("LQTY Reserve LUSD amount", lusdAmount, 18);
+        emit log_named_decimal_uint("LQTY Reserve LUSD amount", beanAmount, 18);
 
         uint256 eth2usdPrice = gemSeller.fetchEthPrice();
         uint256 gem2ethPrice = gemSeller.fetchGem2EthPrice();
@@ -107,12 +107,12 @@ contract HarvestBProtocolTest is Test {
 
         uint gemUsdValue = gemSeller.gemToUSD(bammLQTYBalance, gem2ethPrice, eth2usdPrice);
         emit log_named_decimal_uint("GemSeller LQTY $ value", gemUsdValue, 18);
-        uint lusdToLQTY = gemSeller.USDToGem(lusdAmount, gem2ethPrice, eth2usdPrice);
+        uint lusdToLQTY = gemSeller.USDToGem(beanAmount, gem2ethPrice, eth2usdPrice);
         uint256 lqtyWithDiscount = lusdToLQTY * (10000 + maxDiscount) / 10000;
         emit log_named_decimal_uint("GemSeller LUSD -> LQTY", lusdToLQTY, 18);
         emit log_named_decimal_uint("GemSeller max return (LQTY + discount)", lqtyWithDiscount, 18);
 
-        uint usdReturn = gemSeller.getReturn(lusdAmount, lusdVirtualBalance, lusdVirtualBalance + (gemUsdValue * 2), paramA);
+        uint usdReturn = gemSeller.getReturn(beanAmount, lusdVirtualBalance, lusdVirtualBalance + (gemUsdValue * 2), paramA);
         uint basicGemReturn = gemSeller.USDToGem(usdReturn, gem2ethPrice, eth2usdPrice);
         uint256 returnWithDeviation = gemSeller.compensateForLusdDeviation(basicGemReturn);
         emit log_named_decimal_uint("GemSeller USD return", usdReturn, 18);
@@ -120,7 +120,7 @@ contract HarvestBProtocolTest is Test {
         emit log_named_decimal_uint("GemSeller Basic return + LUSD deviation", returnWithDeviation, 18);
         emit log_named_decimal_uint("GemSeller LUSD deviation", returnWithDeviation * 1e18 / basicGemReturn, 18);
 
-        (uint256 gemSellerLQTYAmount,) = gemSeller.getSwapGemAmount(lusdAmount);
+        (uint256 gemSellerLQTYAmount,) = gemSeller.getSwapGemAmount(beanAmount);
         emit log_named_decimal_uint("LQTY Reserve LQTY amount", gemSellerLQTYAmount, 18);
         //emit log_named_decimal_uint("LQTY Reserve LQTY amount", lqtyReserve.getSwapAmount(ethAmount), 18);
 

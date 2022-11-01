@@ -10,10 +10,10 @@ const addresses = JSON.stringify(
   {
     BLUSD_AMM_ADDRESS: deployment.addresses.bLUSDCurvePool,
     BLUSD_AMM_STAKING_ADDRESS: deployment.addresses.curveLiquidityGauge,
-    BLUSD_TOKEN_ADDRESS: deployment.addresses.bLUSDToken,
+    BLUSD_TOKEN_ADDRESS: deployment.addresses.bBEANToken,
     BOND_NFT_ADDRESS: deployment.addresses.bondNFT,
     CHICKEN_BOND_MANAGER_ADDRESS: deployment.addresses.chickenBondManager,
-    LUSD_OVERRIDE_ADDRESS: deployment.addresses.lusdToken
+    LUSD_OVERRIDE_ADDRESS: deployment.addresses.beanToken
   },
   null,
   4

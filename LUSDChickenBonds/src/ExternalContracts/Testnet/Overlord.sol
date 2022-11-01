@@ -21,8 +21,8 @@ contract Overlord {
     }
 
     address public immutable prototype;
-    ERC20Faucet public immutable lusdToken;
-    IERC20 public immutable bLUSDToken;
+    ERC20Faucet public immutable beanToken;
+    IERC20 public immutable bBEANToken;
     ChickenBondManager public immutable chickenBondManager;
     BondNFT public immutable bondNFT;
     ICurveCryptoPool public immutable bLUSDCurvePool;
@@ -31,8 +31,8 @@ contract Overlord {
 
     constructor(OverlordParams memory params) {
         prototype = params.prototype;
-        lusdToken = ERC20Faucet(params.lusdTokenAddress);
-        bLUSDToken = IERC20(params.bLUSDTokenAddress);
+        beanToken = ERC20Faucet(params.lusdTokenAddress);
+        bBEANToken = IERC20(params.bLUSDTokenAddress);
         chickenBondManager = ChickenBondManager(params.chickenBondManagerAddress);
         bondNFT = BondNFT(params.bondNFTAddress);
         bLUSDCurvePool = ICurveCryptoPool(params.bLUSDCurvePoolAddress);
@@ -94,8 +94,8 @@ contract Overlord {
         } else {
             uint256 lastBondID = bondNFT.tokenOfOwnerByIndex(address(underling), numBonds - 1);
             (
-                /* lusdAmount */,
-                /* claimedBLUSD */,
+                /* beanAmount */,
+                /* claimedBBEAN */,
                 uint64 startTime,
                 /* endTime */,
                 uint8 lastBondStatus
@@ -106,7 +106,7 @@ contract Overlord {
 
                 if (
                     bondAge >= _tOpt && (
-                        bLUSDToken.totalSupply() > 0 ||
+                        bBEANToken.totalSupply() > 0 ||
                         bondAge >= chickenBondManager.BOOTSTRAP_PERIOD_CHICKEN_IN()
                     )
                 ) {
@@ -132,7 +132,7 @@ contract Overlord {
     }
 
     function _createBond(Underling _underling) internal {
-        uint256 lusdBalance = lusdToken.balanceOf(address(_underling));
+        uint256 lusdBalance = beanToken.balanceOf(address(_underling));
         uint256 minLUSDAmount = chickenBondManager.MIN_BOND_AMOUNT();
         uint256 maxLUSDAmount = Math.max(lusdBalance / 2, minLUSDAmount);
 
@@ -147,16 +147,16 @@ contract Overlord {
         )));
 
 
-        uint256 lusdAmount =
+        uint256 beanAmount =
             minLUSDAmount +
             (maxLUSDAmount - minLUSDAmount) * uint128(rand) / type(uint128).max;
 
-        _underling.createBond(lusdAmount);
+        _underling.createBond(beanAmount);
     }
 
     function _addLiquidity(Underling _underling) internal {
-        uint256 bLUSDBalance = bLUSDToken.balanceOf(address(_underling));
-        uint256 lusdBalance = lusdToken.balanceOf(address(_underling));
+        uint256 bLUSDBalance = bBEANToken.balanceOf(address(_underling));
+        uint256 lusdBalance = beanToken.balanceOf(address(_underling));
         uint256 priceScale = bLUSDCurvePool.price_scale();
         uint256 balancedLUSD = bLUSDBalance * 1e18 / priceScale;
 
@@ -171,7 +171,7 @@ contract Overlord {
     }
 
     function _sellBLUSD(Underling _underling, uint256 _minExchangeRate) internal {
-        uint256 dx = bLUSDToken.balanceOf(address(_underling));
+        uint256 dx = bBEANToken.balanceOf(address(_underling));
 
         try _underling.exchange(0, 1, dx, dx * _minExchangeRate / 1e18) {} catch {}
     }

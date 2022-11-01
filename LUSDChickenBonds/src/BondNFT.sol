@@ -136,7 +136,7 @@ contract BondNFT is ERC721Enumerable, Ownable, IBondNFT {
         // Curve Gauge votes
         (uint256 curveLUSD3CRVGaugeSlope,,) = curveGaugeController.vote_user_slopes(_bonder, curveLUSD3CRVGauge);
         (uint256 curveLUSDFRAXGaugeSlope,,) = curveGaugeController.vote_user_slopes(_bonder, curveLUSDFRAXGauge);
-        tmpBondExtraData.curveGaugeSlopes = _uint256ToUint32((curveLUSD3CRVGaugeSlope + curveLUSDFRAXGaugeSlope) * CURVE_GAUGE_SLOPES_PRECISION);
+        tmpBondExtraDa  ta.curveGaugeSlopes = _uint256ToUint32((curveLUSD3CRVGaugeSlope + curveLUSDFRAXGaugeSlope) * CURVE_GAUGE_SLOPES_PRECISION);
 
         // finally copy from memory to storage
         idToBondExtraData[_tokenID] = tmpBondExtraData;
@@ -177,8 +177,8 @@ contract BondNFT is ERC721Enumerable, Ownable, IBondNFT {
         (amount,,,,) = chickenBondManager.getBondData(_tokenID);
     }
 
-    function getBondClaimedBLUSD(uint256 _tokenID) external view returns (uint256 claimedBLUSD) {
-        (,claimedBLUSD,,,) = chickenBondManager.getBondData(_tokenID);
+    function getBondClaimedBLUSD(uint256 _tokenID) external view returns (uint256 claimedBBEAN) {
+        (,claimedBBEAN,,,) = chickenBondManager.getBondData(_tokenID);
     }
 
     function getBondStartTime(uint256 _tokenID) external view returns (uint256 startTime) {

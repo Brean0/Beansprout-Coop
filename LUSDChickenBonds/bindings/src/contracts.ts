@@ -20,7 +20,7 @@ import testnetCurvePool from "../artifacts/TestnetCurvePool.json";
 import testnetCurveBasePool from "../artifacts/TestnetCurveBasePool.json";
 import mockYearnRegistry from "../artifacts/MockYearnRegistry.json";
 import testnetYearnVault from "../artifacts/TestnetYearnVault.json";
-import bLUSDToken from "../artifacts/BLUSDToken.json";
+import bBEANToken from "../artifacts/BLUSDToken.json";
 import testnetCurveLiquidityGauge from "../artifacts/TestnetCurveLiquidityGauge.json";
 import prankster from "../artifacts/Prankster.json";
 import underling from "../artifacts/Underling.json";
@@ -146,7 +146,7 @@ export interface LUSDChickenBondContractFactories {
     factory: TestnetCurveBasePoolFactory;
   };
 
-  lusdToken: {
+  beanToken: {
     contractName: "ERC20Faucet";
     factory: ERC20FaucetFactory;
   };
@@ -166,7 +166,7 @@ export interface LUSDChickenBondContractFactories {
     factory: TestnetCurveLiquidityGaugeFactory;
   };
 
-  bLUSDToken: {
+  bBEANToken: {
     contractName: "BLUSDToken";
     factory: BLUSDTokenFactory;
   };
@@ -360,11 +360,11 @@ const getContractArtifacts = (): LUSDChickenBondContractArtifacts => ({
   chickenBondManager: checkArtifact("ChickenBondManager", chickenBondManager),
   curvePool: checkArtifact("TestnetCurvePool", testnetCurvePool),
   curveBasePool: checkArtifact("TestnetCurveBasePool", testnetCurveBasePool),
-  lusdToken: checkArtifact("ERC20Faucet", erc20Faucet),
+  beanToken: checkArtifact("ERC20Faucet", erc20Faucet),
   bLUSDCurveToken: checkArtifact("CurveToken", curveToken),
   bLUSDCurvePool: checkArtifact("CurveCryptoSwap2ETH", curveCryptoSwap2ETH),
   curveLiquidityGauge: checkArtifact("TestnetCurveLiquidityGauge", testnetCurveLiquidityGauge),
-  bLUSDToken: checkArtifact("BLUSDToken", bLUSDToken),
+  bBEANToken: checkArtifact("BLUSDToken", bBEANToken),
   yearnCurveVault: checkArtifact("TestnetYearnVault", testnetYearnVault),
   bammSPVault: checkArtifact("TestnetBAMM", testnetBAMM),
   yearnRegistry: checkArtifact("MockYearnRegistry", mockYearnRegistry),

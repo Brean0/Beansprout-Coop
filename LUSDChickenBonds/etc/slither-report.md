@@ -25,19 +25,19 @@ https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0a
 Impact: High
 Confidence: Medium
  - [ ] ID-1
-[ChickenBondManager._shiftAllLUSDInSPToSilo()](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L545-L555) ignores return value by [lusdToken.transfer(lusdSiloAddress,lusdBalanceDelta)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L554)
+[ChickenBondManager._shiftAllLUSDInSPToSilo()](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L545-L555) ignores return value by [beanToken.transfer(lusdSiloAddress,lusdBalanceDelta)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L554)
 
 https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L545-L555
 
 
  - [ ] ID-2
-[ChickenBondManager.chickenIn(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L330-L378) ignores return value by [lusdToken.transferFrom(lusdSiloAddress,msg.sender,lusdToRefund)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L367)
+[ChickenBondManager.chickenIn(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L330-L378) ignores return value by [beanToken.transferFrom(lusdSiloAddress,msg.sender,lusdToRefund)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L367)
 
 https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L330-L378
 
 
  - [ ] ID-3
-[ChickenBondManager.sendFeeShare(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L559-L566) ignores return value by [lusdToken.transferFrom(yearnGovernanceAddress,address(this),_lusdAmount)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L564)
+[ChickenBondManager.sendFeeShare(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L559-L566) ignores return value by [beanToken.transferFrom(yearnGovernanceAddress,address(this),_beanAmount)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L564)
 
 https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L559-L566
 
@@ -49,13 +49,13 @@ https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0a
 
 
  - [ ] ID-5
-[ChickenBondOperationsScript.chickenIn(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L58-L69) ignores return value by [bLUSDToken.transfer(msg.sender,balanceAfter - balanceBefore)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L68)
+[ChickenBondOperationsScript.chickenIn(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L58-L69) ignores return value by [bBEANToken.transfer(msg.sender,balanceAfter - balanceBefore)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L68)
 
 https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L58-L69
 
 
  - [ ] ID-6
-[ChickenBondManager.chickenOut(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L216-L259) ignores return value by [lusdToken.transferFrom(lusdSiloAddress,msg.sender,lusdToWithdraw)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L255)
+[ChickenBondManager.chickenOut(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L216-L259) ignores return value by [beanToken.transferFrom(lusdSiloAddress,msg.sender,lusdToWithdraw)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L255)
 
 https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L216-L259
 
@@ -67,43 +67,43 @@ https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0a
 
 
  - [ ] ID-8
-[ChickenBondOperationsScript.redeemAndWithdraw(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L71-L100) ignores return value by [bLUSDToken.transferFrom(msg.sender,address(this),_bLUSDToRedeem - proxyBalance)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L75)
+[ChickenBondOperationsScript.redeemAndWithdraw(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L71-L100) ignores return value by [bBEANToken.transferFrom(msg.sender,address(this),_bLUSDToRedeem - proxyBalance)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L75)
 
 https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L71-L100
 
 
  - [ ] ID-9
-[ChickenBondOperationsScript.createBond(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L34-L45) ignores return value by [lusdToken.transferFrom(msg.sender,address(this),_lusdAmount - proxyBalance)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L38)
+[ChickenBondOperationsScript.createBond(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L34-L45) ignores return value by [beanToken.transferFrom(msg.sender,address(this),_beanAmount - proxyBalance)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L38)
 
 https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L34-L45
 
 
  - [ ] ID-10
-[ChickenBondOperationsScript.chickenOut(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L47-L56) ignores return value by [lusdToken.transfer(msg.sender,lusdAmount)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L55)
+[ChickenBondOperationsScript.chickenOut(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L47-L56) ignores return value by [beanToken.transfer(msg.sender,beanAmount)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L55)
 
 https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L47-L56
 
 
  - [ ] ID-11
-[ChickenBondManager.chickenOut(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L216-L259) ignores return value by [lusdToken.transfer(msg.sender,lusdBalanceDelta)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L251)
+[ChickenBondManager.chickenOut(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L216-L259) ignores return value by [beanToken.transfer(msg.sender,lusdBalanceDelta)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L251)
 
 https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L216-L259
 
 
  - [ ] ID-12
-[ChickenBondManager.redeem(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L380-L424) ignores return value by [lusdToken.transferFrom(lusdSiloAddress,msg.sender,lusdFromSilo)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L405)
+[ChickenBondManager.redeem(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L380-L424) ignores return value by [beanToken.transferFrom(lusdSiloAddress,msg.sender,lusdFromSilo)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L405)
 
 https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L380-L424
 
 
  - [ ] ID-13
-[ChickenBondManager.createBond(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L187-L209) ignores return value by [lusdToken.transferFrom(msg.sender,address(this),_lusdAmount)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L205)
+[ChickenBondManager.createBond(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L187-L209) ignores return value by [beanToken.transferFrom(msg.sender,address(this),_beanAmount)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L205)
 
 https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L187-L209
 
 
  - [ ] ID-14
-[ChickenBondOperationsScript.redeemAndWithdraw(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L71-L100) ignores return value by [lusdToken.transfer(msg.sender,lusdBalanceDelta)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L99)
+[ChickenBondOperationsScript.redeemAndWithdraw(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L71-L100) ignores return value by [beanToken.transfer(msg.sender,lusdBalanceDelta)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L99)
 
 https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L71-L100
 
@@ -129,7 +129,7 @@ https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0a
 
  - [ ] ID-17
 [ChickenBondManager.redeem(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L380-L424) performs a multiplication on the result of a division:
-	-[fractionOfBLUSDToRedeem = _bLUSDToRedeem * 1e18 / bLUSDToken.totalSupply()](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L385)
+	-[fractionOfBLUSDToRedeem = _bLUSDToRedeem * 1e18 / bBEANToken.totalSupply()](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L385)
 	-[fractionOfAcquiredLUSDToWithdraw = fractionOfBLUSDToRedeem * (1e18 - redemptionFeePercentage) / 1e18](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L389)
 
 https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L380-L424
@@ -201,7 +201,7 @@ https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0a
 
  - [ ] ID-26
 [ChickenBondManager._transferToRewardsStakingContract(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L262-L267) uses a dangerous strict equality:
-	- [assert(bool)(lusdBalanceBefore - lusdToken.balanceOf(address(this)) == _lusdToTransfer)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L266)
+	- [assert(bool)(lusdBalanceBefore - beanToken.balanceOf(address(this)) == _lusdToTransfer)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L266)
 
 https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L262-L267
 
@@ -228,8 +228,8 @@ Reentrancy in [ChickenBondManager.createBond(uint256)](https://github.com/liquit
 	External calls:
 	- [bondID = bondNFT.mint(msg.sender)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L194)
 	State variables written after the call(s):
-	- [totalPendingLUSD += _lusdAmount](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L202)
-	- [totalWeightedStartTimes += _lusdAmount * block.timestamp](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L203)
+	- [totalPendingLUSD += _beanAmount](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L202)
+	- [totalWeightedStartTimes += _beanAmount * block.timestamp](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L203)
 
 https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L187-L209
 
@@ -238,15 +238,15 @@ https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0a
 Reentrancy in [ChickenBondManager.chickenIn(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L330-L378):
 	External calls:
 	- [_firstChickenIn()](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L344)
-		- [curveLiquidityGauge.deposit_reward_token(address(lusdToken),_lusdToTransfer)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L264)
+		- [curveLiquidityGauge.deposit_reward_token(address(beanToken),_lusdToTransfer)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L264)
 		- [yearnCurveVault.withdraw(_yTokensToSwap)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L285)
 		- [yearnSPVault.withdraw(_yTokensToSwap)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L272)
 		- [curvePool.remove_liquidity_one_coin(LUSD3CRVBalanceDelta,INDEX_OF_LUSD_TOKEN_IN_CURVE_POOL,0)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L291)
 	State variables written after the call(s):
 	- [delete idToBondData[_bondID]](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L351)
 	- [permanentLUSDInSP += lusdSurplus](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L364)
-	- [totalPendingLUSD -= bond.lusdAmount](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L354)
-	- [totalWeightedStartTimes -= bond.lusdAmount * bond.startTime](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L355)
+	- [totalPendingLUSD -= bond.beanAmount](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L354)
+	- [totalWeightedStartTimes -= bond.beanAmount * bond.startTime](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L355)
 
 https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L330-L378
 
@@ -318,13 +318,13 @@ https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0a
 
 
  - [ ] ID-41
-[ChickenBondManager.constructor(ChickenBondManager.ExternalAdresses,uint256,uint256,uint256,uint256,uint256,uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L139-L183) ignores return value by [lusdToken.approve(address(curveLiquidityGauge),MAX_UINT256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L175)
+[ChickenBondManager.constructor(ChickenBondManager.ExternalAdresses,uint256,uint256,uint256,uint256,uint256,uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L139-L183) ignores return value by [beanToken.approve(address(curveLiquidityGauge),MAX_UINT256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L175)
 
 https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L139-L183
 
 
  - [ ] ID-42
-[LUSDSilo.initialize(address)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/LUSDSilo.sol#L11-L18) ignores return value by [lusdToken.approve(_chickenBondManagerAddress,type()(uint256).max)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/LUSDSilo.sol#L15)
+[LUSDSilo.initialize(address)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/LUSDSilo.sol#L11-L18) ignores return value by [beanToken.approve(_chickenBondManagerAddress,type()(uint256).max)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/LUSDSilo.sol#L15)
 
 https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/LUSDSilo.sol#L11-L18
 
@@ -342,13 +342,13 @@ https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0a
 
 
  - [ ] ID-45
-[ChickenBondManager.constructor(ChickenBondManager.ExternalAdresses,uint256,uint256,uint256,uint256,uint256,uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L139-L183) ignores return value by [lusdToken.approve(address(curvePool),MAX_UINT256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L173)
+[ChickenBondManager.constructor(ChickenBondManager.ExternalAdresses,uint256,uint256,uint256,uint256,uint256,uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L139-L183) ignores return value by [beanToken.approve(address(curvePool),MAX_UINT256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L173)
 
 https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L139-L183
 
 
  - [ ] ID-46
-[ChickenBondManager.constructor(ChickenBondManager.ExternalAdresses,uint256,uint256,uint256,uint256,uint256,uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L139-L183) ignores return value by [lusdToken.approve(address(yearnSPVault),MAX_UINT256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L172)
+[ChickenBondManager.constructor(ChickenBondManager.ExternalAdresses,uint256,uint256,uint256,uint256,uint256,uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L139-L183) ignores return value by [beanToken.approve(address(yearnSPVault),MAX_UINT256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L172)
 
 https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L139-L183
 
@@ -366,7 +366,7 @@ https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0a
 
 
  - [ ] ID-49
-[ChickenBondManager.createBond(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L187-L209) ignores return value by [yearnSPVault.deposit(_lusdAmount)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L208)
+[ChickenBondManager.createBond(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L187-L209) ignores return value by [yearnSPVault.deposit(_beanAmount)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L208)
 
 https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L187-L209
 
@@ -378,7 +378,7 @@ https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0a
 
 
  - [ ] ID-51
-[ChickenBondOperationsScript.createBond(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L34-L45) ignores return value by [lusdToken.approve(address(chickenBondManager),_lusdAmount)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L42)
+[ChickenBondOperationsScript.createBond(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L34-L45) ignores return value by [beanToken.approve(address(chickenBondManager),_beanAmount)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L42)
 
 https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L34-L45
 
@@ -408,7 +408,7 @@ https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0a
 
 
  - [ ] ID-56
-[ChickenBondManager.sendFeeShare(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L559-L566) ignores return value by [yearnSPVault.deposit(_lusdAmount)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L565)
+[ChickenBondManager.sendFeeShare(uint256)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L559-L566) ignores return value by [yearnSPVault.deposit(_beanAmount)](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L565)
 
 https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L559-L566
 
@@ -607,15 +607,15 @@ https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0a
 
 
  - [ ] ID-80
-Pragma version[^0.8.10](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Interfaces/ILUSDToken.sol#L2) necessitates a version too recent to be trusted. Consider deploying with 0.6.12/0.7.6/0.8.7
+Pragma version[^0.8.10](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Interfaces/IBEANToken.sol#L2) necessitates a version too recent to be trusted. Consider deploying with 0.6.12/0.7.6/0.8.7
 
-https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Interfaces/ILUSDToken.sol#L2
+https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Interfaces/IBEANToken.sol#L2
 
 
  - [ ] ID-81
-Pragma version[^0.8.10](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Interfaces/IBLUSDToken.sol#L2) necessitates a version too recent to be trusted. Consider deploying with 0.6.12/0.7.6/0.8.7
+Pragma version[^0.8.10](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Interfaces/IBBEANToken.sol#L2) necessitates a version too recent to be trusted. Consider deploying with 0.6.12/0.7.6/0.8.7
 
-https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Interfaces/IBLUSDToken.sol#L2
+https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Interfaces/IBBEANToken.sol#L2
 
 
  - [ ] ID-82
@@ -709,7 +709,7 @@ https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0a
 
 
  - [ ] ID-97
-Parameter [ChickenBondManager.sendFeeShare(uint256)._lusdAmount](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L559) is not in mixedCase
+Parameter [ChickenBondManager.sendFeeShare(uint256)._beanAmount](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L559) is not in mixedCase
 
 https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L559
 
@@ -901,7 +901,7 @@ https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0a
 
 
  - [ ] ID-129
-Parameter [ChickenBondManager.createBond(uint256)._lusdAmount](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L187) is not in mixedCase
+Parameter [ChickenBondManager.createBond(uint256)._beanAmount](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L187) is not in mixedCase
 
 https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/ChickenBondManager.sol#L187
 
@@ -913,7 +913,7 @@ https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0a
 
 
  - [ ] ID-131
-Parameter [ChickenBondOperationsScript.createBond(uint256)._lusdAmount](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L34) is not in mixedCase
+Parameter [ChickenBondOperationsScript.createBond(uint256)._beanAmount](https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L34) is not in mixedCase
 
 https://github.com/liquity/ChickenBond/blob/e2e993e50943b3fed6ad17b62d7137f4ff0ad5fb/LUSDChickenBonds/src/Proxy/ChickenBondOperationsScript.sol#L34
 

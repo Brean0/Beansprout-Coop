@@ -32,8 +32,8 @@ contract BondNFTArtworkSwitcher is IBondNFTArtwork, IChickenBondManagerGetter {
         returns (string memory)
     {
         (
-            /* uint256 lusdAmount */,
-            /* uint64 claimedBLUSD */,
+            /* uint256 beanAmount */,
+            /* uint64 claimedBBEAN */,
             /* uint64 startTime */,
             /* uint64 endTime */,
             uint8 status

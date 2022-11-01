@@ -14,7 +14,7 @@ interface ICurve {
 contract DepositLUSDIntoCurveTest is Test {
     //uint256 constant depositAmount = 2e24; // 2M
     address constant LUSD_TOKEN_ADDRESS = 0x5f98805A4E8be255a32880FDeC7F6728C6568bA0;
-    IERC20 constant lusdToken = IERC20(LUSD_TOKEN_ADDRESS);
+    IERC20 constant beanToken = IERC20(LUSD_TOKEN_ADDRESS);
     ICurve constant lusdCrv = ICurve(0xEd279fDD11cA84bEef15AF5D39BB4d4bEE23F0cA);
     ICurve constant _3pool = ICurve(0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7);
 
@@ -41,7 +41,7 @@ contract DepositLUSDIntoCurveTest is Test {
         deal(LUSD_TOKEN_ADDRESS, accountA, depositAmount);
 
         vm.startPrank(accountA);
-        lusdToken.approve(address(lusdCrv), depositAmount);
+        beanToken.approve(address(lusdCrv), depositAmount);
         lusdCrv.add_liquidity([depositAmount, 0], 0);
         vm.stopPrank();
 

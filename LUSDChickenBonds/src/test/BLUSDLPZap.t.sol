@@ -20,9 +20,10 @@ contract BLUSDLPZapTest is BaseTest {
     }
 
     function setUp() public {
+        
         bLUSDLPZap = new BLUSDLPZap();
-        lusdToken = IERC20Permit(address(bLUSDLPZap.lusdToken()));
-        bLUSDToken = BLUSDToken(address(bLUSDLPZap.bLUSDToken()));
+        beanToken = IERC20Permit(address(bLUSDLPZap.beanToken()));
+        bBEANToken = BLUSDToken(address(bLUSDLPZap.bBEANToken()));
         lusd3CRVPool = bLUSDLPZap.lusd3CRVPool();
         bLUSDLUSD3CRVLPToken = bLUSDLPZap.bLUSDLUSD3CRVLPToken();
         bLUSDLUSD3CRVPool = bLUSDLPZap.bLUSDLUSD3CRVPool();
@@ -35,44 +36,44 @@ contract BLUSDLPZapTest is BaseTest {
 
     // cache initial balances
     function _getInitialBalances() internal view returns(TokenBalances memory tokenBalances) {
-        tokenBalances.lusdBalance = lusdToken.balanceOf(address(bLUSDLPZap));
-        tokenBalances.bLUSDBalance = bLUSDToken.balanceOf(address(bLUSDLPZap));
+        tokenBalances.lusdBalance = beanToken.balanceOf(address(bLUSDLPZap));
+        tokenBalances.bLUSDBalance = bBEANToken.balanceOf(address(bLUSDLPZap));
         tokenBalances.lusd3CRVPoolBalance = lusd3CRVPool.balanceOf(address(bLUSDLPZap));
         tokenBalances.bLUSDPoolBalance = bLUSDLUSD3CRVLPToken.balanceOf(address(bLUSDLPZap));
         tokenBalances.bLUSDGaugeBalance = bLUSDGauge.balanceOf(address(bLUSDLPZap));
     }
 
     function _checkBalances(TokenBalances memory _tokenInitialBalances) internal view {
-        require(_tokenInitialBalances.lusdBalance == lusdToken.balanceOf(address(bLUSDLPZap)));
-        require(_tokenInitialBalances.bLUSDBalance == bLUSDToken.balanceOf(address(bLUSDLPZap)));
+        require(_tokenInitialBalances.lusdBalance == beanToken.balanceOf(address(bLUSDLPZap)));
+        require(_tokenInitialBalances.bLUSDBalance == bBEANToken.balanceOf(address(bLUSDLPZap)));
         require(_tokenInitialBalances.lusd3CRVPoolBalance == lusd3CRVPool.balanceOf(address(bLUSDLPZap)));
         require(_tokenInitialBalances.bLUSDPoolBalance == bLUSDLUSD3CRVLPToken.balanceOf(address(bLUSDLPZap)));
         require(_tokenInitialBalances.bLUSDGaugeBalance == bLUSDGauge.balanceOf(address(bLUSDLPZap)));
     }
 
-    function _dealAndApprove(uint256 bLUSDAmount, uint256 lusdAmount) internal {
+    function _dealAndApprove(uint256 bLUSDAmount, uint256 beanAmount) internal {
         // bLUSD
         if (bLUSDAmount > 0) {
-            deal(address(bLUSDToken), A, bLUSDAmount);
-            bLUSDToken.approve(address(bLUSDLPZap), bLUSDAmount);
+            deal(address(bBEANToken), A, bLUSDAmount);
+            bBEANToken.approve(address(bLUSDLPZap), bLUSDAmount);
         }
         // LUSD
-        if (lusdAmount > 0) {
-            deal(address(lusdToken), A, lusdAmount);
-            lusdToken.approve(address(bLUSDLPZap), lusdAmount);
+        if (beanAmount > 0) {
+            deal(address(beanToken), A, beanAmount);
+            beanToken.approve(address(bLUSDLPZap), beanAmount);
         }
     }
 
-    function _addLiquidity(uint256 bLUSDAmount, uint256 lusdAmount, uint256 minLPAmount) internal returns (uint256) {
+    function _addLiquidity(uint256 bLUSDAmount, uint256 beanAmount, uint256 minLPAmount) internal returns (uint256) {
         vm.startPrank(A);
-        _dealAndApprove(bLUSDAmount, lusdAmount);
+        _dealAndApprove(bLUSDAmount, beanAmount);
 
         TokenBalances memory tokenInitialBalances = _getInitialBalances();
 
         uint256 initialbLUSDLUSD3CRVLPTokenBalance = bLUSDLUSD3CRVLPToken.balanceOf(A);
 
         // add liquidity
-        uint256 lpAmount = bLUSDLPZap.addLiquidity(bLUSDAmount, lusdAmount, minLPAmount);
+        uint256 lpAmount = bLUSDLPZap.addLiquidity(bLUSDAmount, beanAmount, minLPAmount);
         vm.stopPrank();
 
         assertEq(lpAmount, bLUSDLUSD3CRVLPToken.balanceOf(A) - initialbLUSDLUSD3CRVLPTokenBalance, "LP tokens mismatch");
@@ -85,10 +86,10 @@ contract BLUSDLPZapTest is BaseTest {
 
     function testAddLiquidityGetsLPTokensNoMin() public {
         uint256 bLUSDAmount = 1000e18;
-        uint256 lusdAmount = 1300e18;
+        uint256 beanAmount = 1300e18;
 
         uint256 initialLUSD3CRVBalance = lusd3CRVPool.balanceOf(A);
-        uint256 lpAmount = _addLiquidity(bLUSDAmount, lusdAmount, 0);
+        uint256 lpAmount = _addLiquidity(bLUSDAmount, beanAmount, 0);
 
         //console.log(bLUSDLUSD3CRVLPToken.balanceOf(A), "bLUSDLUSD3CRVLPToken.balanceOf(A)");
         assertEq(lusd3CRVPool.balanceOf(A) - initialLUSD3CRVBalance, 0, "User should not receive 3pool LP tokens");
@@ -97,10 +98,10 @@ contract BLUSDLPZapTest is BaseTest {
 
     function testAddLiquidityGetsMinLPTokens() public {
         uint256 bLUSDAmount = 1000e18;
-        uint256 lusdAmount = 1300e18;
+        uint256 beanAmount = 1300e18;
         uint256 minLPAmount = 1145e18 * 99 / 100; // add some safety thresholds, as mainnet state can vary
 
-        uint256 lpAmount = _addLiquidity(bLUSDAmount, lusdAmount, minLPAmount);
+        uint256 lpAmount = _addLiquidity(bLUSDAmount, beanAmount, minLPAmount);
 
         //console.log(bLUSDLUSD3CRVLPToken.balanceOf(A), "bLUSDLUSD3CRVLPToken.balanceOf(A)");
         assertGt(lpAmount, minLPAmount, "Not enough LP tokens received");
@@ -108,23 +109,23 @@ contract BLUSDLPZapTest is BaseTest {
 
     function testAddLiquidityFailsIfNotMinLPTokens() public {
         uint256 bLUSDAmount = 1000e18;
-        uint256 lusdAmount = 1300e18;
+        uint256 beanAmount = 1300e18;
         uint256 minLPAmount = 1146e18 * 101 / 100; // add some safety thresholds, as mainnet state can vary
 
         vm.startPrank(A);
-        _dealAndApprove(bLUSDAmount, lusdAmount);
+        _dealAndApprove(bLUSDAmount, beanAmount);
         // add liquidity
         vm.expectRevert("Slippage");
-        bLUSDLPZap.addLiquidity(bLUSDAmount, lusdAmount, minLPAmount);
+        bLUSDLPZap.addLiquidity(bLUSDAmount, beanAmount, minLPAmount);
         vm.stopPrank();
     }
 
     function testAddLiquiditySingleSidedBLUSD() public {
         uint256 bLUSDAmount = 1000e18;
-        uint256 lusdAmount = 1300e18;
+        uint256 beanAmount = 1300e18;
 
         // Initial liquidity must be dual sided
-        _addLiquidity(bLUSDAmount, lusdAmount, 0);
+        _addLiquidity(bLUSDAmount, beanAmount, 0);
 
         uint256 bLUSDAmount2 = bLUSDAmount / 10;
         uint256 minLPAmount = bLUSDLPZap.getMinLPTokens(bLUSDAmount2, 0);
@@ -137,12 +138,12 @@ contract BLUSDLPZapTest is BaseTest {
 
     function testAddLiquiditySingleSidedLUSD() public {
         uint256 bLUSDAmount = 1000e18;
-        uint256 lusdAmount = 1300e18;
+        uint256 beanAmount = 1300e18;
 
         // Initial liquidity must be dual sided
-        _addLiquidity(bLUSDAmount, lusdAmount, 0);
+        _addLiquidity(bLUSDAmount, beanAmount, 0);
 
-        uint256 lusdAmount2 = lusdAmount / 10;
+        uint256 lusdAmount2 = beanAmount / 10;
         uint256 minLPAmount = bLUSDLPZap.getMinLPTokens(0, lusdAmount2);
         //console.log(minLPAmount, "minLPAmount");
         uint256 lpAmount = _addLiquidity(0, lusdAmount2, minLPAmount);
@@ -153,10 +154,10 @@ contract BLUSDLPZapTest is BaseTest {
 
     function testAddLiquidityFailsIfBothZero() public {
         uint256 bLUSDAmount = 1000e18;
-        uint256 lusdAmount = 1300e18;
+        uint256 beanAmount = 1300e18;
 
         // Initial liquidity must be dual sided
-        _addLiquidity(bLUSDAmount, lusdAmount, 0);
+        _addLiquidity(bLUSDAmount, beanAmount, 0);
 
         vm.startPrank(A);
         vm.expectRevert("BLUSDLPZap: Cannot provide zero liquidity");
@@ -166,18 +167,18 @@ contract BLUSDLPZapTest is BaseTest {
 
     function testAddLiquidityAndStakeGetsGaugeTokens() public {
         uint256 bLUSDAmount = 1000e18;
-        uint256 lusdAmount = 1300e18;
+        uint256 beanAmount = 1300e18;
 
         uint256 initialbLUSDLUSD3CRVLPTokenBalance = bLUSDLUSD3CRVLPToken.balanceOf(A);
         uint256 initialbLUSDGaugeBalance = bLUSDGauge.balanceOf(A);
 
         vm.startPrank(A);
-        _dealAndApprove(bLUSDAmount, lusdAmount);
+        _dealAndApprove(bLUSDAmount, beanAmount);
 
         TokenBalances memory tokenInitialBalances = _getInitialBalances();
 
         // add liquidity and stake
-        bLUSDLPZap.addLiquidityAndStake(bLUSDAmount, lusdAmount, 0);
+        bLUSDLPZap.addLiquidityAndStake(bLUSDAmount, beanAmount, 0);
         vm.stopPrank();
 
         // check no tokens are left in the contract
@@ -191,15 +192,15 @@ contract BLUSDLPZapTest is BaseTest {
 
     function testRemoveLiqudityBalancedNoMin() public {
         uint256 bLUSDAmount = 1000e18;
-        uint256 lusdAmount = 1300e18;
+        uint256 beanAmount = 1300e18;
         uint256 fractionToWithdraw = 50e16;
 
-        uint256 lpAmount = _addLiquidity(bLUSDAmount, lusdAmount, 0);
+        uint256 lpAmount = _addLiquidity(bLUSDAmount, beanAmount, 0);
 
         TokenBalances memory tokenInitialBalances = _getInitialBalances();
 
-        uint256 initialBLUSDBalance = bLUSDToken.balanceOf(A);
-        uint256 initialLUSDBalance = lusdToken.balanceOf(A);
+        uint256 initialBLUSDBalance = bBEANToken.balanceOf(A);
+        uint256 initialLUSDBalance = beanToken.balanceOf(A);
 
         uint256 withdrawAmount = lpAmount * fractionToWithdraw / 1e18;
         (uint256 expectedBLUSDAmount, uint256 expectedLUSDAmount) = bLUSDLPZap.getMinWithdrawBalanced(withdrawAmount);
@@ -209,16 +210,16 @@ contract BLUSDLPZapTest is BaseTest {
         bLUSDLPZap.removeLiquidityBalanced(withdrawAmount, 0, 0);
         vm.stopPrank();
 
-        //console.log(bLUSDToken.balanceOf(A) - initialBLUSDBalance, "received bLUSD");
-        //console.log(lusdToken.balanceOf(A) - initialLUSDBalance, "received LUSD");
+        //console.log(bBEANToken.balanceOf(A) - initialBLUSDBalance, "received bLUSD");
+        //console.log(beanToken.balanceOf(A) - initialLUSDBalance, "received LUSD");
         assertRelativeError(
-            bLUSDToken.balanceOf(A) - initialBLUSDBalance,
+            bBEANToken.balanceOf(A) - initialBLUSDBalance,
             expectedBLUSDAmount,
             10,
             "BLUSD balance mismatch"
         );
         assertRelativeError(
-            lusdToken.balanceOf(A) - initialLUSDBalance,
+            beanToken.balanceOf(A) - initialLUSDBalance,
             expectedLUSDAmount,
             10,
             "LUSD balance mismatch"
@@ -230,15 +231,15 @@ contract BLUSDLPZapTest is BaseTest {
 
     function testRemoveLiqudityBalancedWithMinAmounts() public {
         uint256 bLUSDAmount = 1000e18;
-        uint256 lusdAmount = 1300e18;
+        uint256 beanAmount = 1300e18;
         uint256 fractionToWithdraw = 50e16;
 
-        uint256 lpAmount = _addLiquidity(bLUSDAmount, lusdAmount, 0);
+        uint256 lpAmount = _addLiquidity(bLUSDAmount, beanAmount, 0);
 
         TokenBalances memory tokenInitialBalances = _getInitialBalances();
 
-        uint256 initialBLUSDBalance = bLUSDToken.balanceOf(A);
-        uint256 initialLUSDBalance = lusdToken.balanceOf(A);
+        uint256 initialBLUSDBalance = bBEANToken.balanceOf(A);
+        uint256 initialLUSDBalance = beanToken.balanceOf(A);
 
         uint256 withdrawAmount = lpAmount * fractionToWithdraw / 1e18;
         (uint256 expectedBLUSDAmount, uint256 expectedLUSDAmount) = bLUSDLPZap.getMinWithdrawBalanced(withdrawAmount);
@@ -253,16 +254,16 @@ contract BLUSDLPZapTest is BaseTest {
         bLUSDLPZap.removeLiquidityBalanced(withdrawAmount, expectedBLUSDAmount, expectedLUSDAmount);
         vm.stopPrank();
 
-        //console.log(bLUSDToken.balanceOf(A) - initialBLUSDBalance, "received bLUSD");
-        //console.log(lusdToken.balanceOf(A) - initialLUSDBalance, "received LUSD");
+        //console.log(bBEANToken.balanceOf(A) - initialBLUSDBalance, "received bLUSD");
+        //console.log(beanToken.balanceOf(A) - initialLUSDBalance, "received LUSD");
         assertRelativeError(
-            bLUSDToken.balanceOf(A) - initialBLUSDBalance,
+            bBEANToken.balanceOf(A) - initialBLUSDBalance,
             expectedBLUSDAmount,
             10,
             "BLUSD balance mismatch"
         );
         assertRelativeError(
-            lusdToken.balanceOf(A) - initialLUSDBalance,
+            beanToken.balanceOf(A) - initialLUSDBalance,
             expectedLUSDAmount,
             10,
             "LUSD balance mismatch"
@@ -274,12 +275,12 @@ contract BLUSDLPZapTest is BaseTest {
 
     function testRemoveLiqudityBalancedFailsIfNoMinBLUSDReached() public {
         uint256 bLUSDAmount = 1000e18;
-        uint256 lusdAmount = 1300e18;
+        uint256 beanAmount = 1300e18;
         uint256 fractionToWithdraw = 50e16;
 
         uint256 expectedBLUSDAmount = bLUSDAmount * fractionToWithdraw / 1e18 + 1e18;
 
-        uint256 lpAmount = _addLiquidity(bLUSDAmount, lusdAmount, 0);
+        uint256 lpAmount = _addLiquidity(bLUSDAmount, beanAmount, 0);
 
         uint256 withdrawAmount = lpAmount * fractionToWithdraw / 1e18;
         vm.startPrank(A);
@@ -291,12 +292,12 @@ contract BLUSDLPZapTest is BaseTest {
 
     function testRemoveLiqudityBalancedFailsIfNoMinLUSDReached() public {
         uint256 bLUSDAmount = 1000e18;
-        uint256 lusdAmount = 1300e18;
+        uint256 beanAmount = 1300e18;
         uint256 fractionToWithdraw = 50e16;
 
-        uint256 expectedLUSDAmount = lusdAmount * fractionToWithdraw / 1e18 + 1e18;
+        uint256 expectedLUSDAmount = beanAmount * fractionToWithdraw / 1e18 + 1e18;
 
-        uint256 lpAmount = _addLiquidity(bLUSDAmount, lusdAmount, 0);
+        uint256 lpAmount = _addLiquidity(bLUSDAmount, beanAmount, 0);
 
         uint256 withdrawAmount = lpAmount * fractionToWithdraw / 1e18;
         vm.startPrank(A);
@@ -308,15 +309,15 @@ contract BLUSDLPZapTest is BaseTest {
 
     function testRemoveLiqudityLUSDNoMin() public {
         uint256 bLUSDAmount = 1000e18;
-        uint256 lusdAmount = 1300e18;
+        uint256 beanAmount = 1300e18;
         uint256 fractionToWithdraw = 1e16; // small fraction, to avoid too much slippage
 
-        uint256 lpAmount = _addLiquidity(bLUSDAmount, lusdAmount, 0);
+        uint256 lpAmount = _addLiquidity(bLUSDAmount, beanAmount, 0);
 
         TokenBalances memory tokenInitialBalances = _getInitialBalances();
 
-        uint256 initialBLUSDBalance = bLUSDToken.balanceOf(A);
-        uint256 initialLUSDBalance = lusdToken.balanceOf(A);
+        uint256 initialBLUSDBalance = bBEANToken.balanceOf(A);
+        uint256 initialLUSDBalance = beanToken.balanceOf(A);
 
         uint256 withdrawAmount = lpAmount * fractionToWithdraw / 1e18;
         uint256 expectedLUSD = bLUSDLPZap.getMinWithdrawLUSD(withdrawAmount);
@@ -326,14 +327,14 @@ contract BLUSDLPZapTest is BaseTest {
         bLUSDLPZap.removeLiquidityLUSD(withdrawAmount, 0);
         vm.stopPrank();
 
-        assertEq(bLUSDToken.balanceOf(A) - initialBLUSDBalance, 0, "BLUSD received should be zero");
-        //console.log(lusdToken.balanceOf(A) - initialLUSDBalance, "lusdToken.balanceOf(A) - initialLUSDBalance");
-        //console.log(lusdAmount * fractionToWithdraw / 1e18, "lusdAmount * fractionToWithdraw / 1e18");
+        assertEq(bBEANToken.balanceOf(A) - initialBLUSDBalance, 0, "BLUSD received should be zero");
+        //console.log(beanToken.balanceOf(A) - initialLUSDBalance, "beanToken.balanceOf(A) - initialLUSDBalance");
+        //console.log(beanAmount * fractionToWithdraw / 1e18, "beanAmount * fractionToWithdraw / 1e18");
         //console.log(bLUSDAmount * fractionToWithdraw / 1e18, "bLUSDAmount * fractionToWithdraw / 1e18");
         //console.log(expectedLUSD, "expectedLUSD");
         //console.log(bLUSDLUSD3CRVPool.get_dy(0, 1, bLUSDAmount * fractionToWithdraw / 1e18), "bLUSDLUSD3CRVLPPool.get_dy(0, 1, bLUSDAmount * fractionToWithdraw / 1e18)");
         assertRelativeError(
-            lusdToken.balanceOf(A) - initialLUSDBalance,
+            beanToken.balanceOf(A) - initialLUSDBalance,
             expectedLUSD,
             1e3,
             "LUSD balance mismatch"
@@ -345,15 +346,15 @@ contract BLUSDLPZapTest is BaseTest {
 
     function testRemoveLiqudityLUSDWithMin() public {
         uint256 bLUSDAmount = 1000e18;
-        uint256 lusdAmount = 1300e18;
+        uint256 beanAmount = 1300e18;
         uint256 fractionToWithdraw = 1e16; // small fraction, to avoid too much slippage
 
-        uint256 lpAmount = _addLiquidity(bLUSDAmount, lusdAmount, 0);
+        uint256 lpAmount = _addLiquidity(bLUSDAmount, beanAmount, 0);
 
         TokenBalances memory tokenInitialBalances = _getInitialBalances();
 
-        uint256 initialBLUSDBalance = bLUSDToken.balanceOf(A);
-        uint256 initialLUSDBalance = lusdToken.balanceOf(A);
+        uint256 initialBLUSDBalance = bBEANToken.balanceOf(A);
+        uint256 initialLUSDBalance = beanToken.balanceOf(A);
 
         uint256 withdrawAmount = lpAmount * fractionToWithdraw / 1e18;
         uint256 expectedLUSD = bLUSDLPZap.getMinWithdrawLUSD(withdrawAmount);
@@ -364,10 +365,10 @@ contract BLUSDLPZapTest is BaseTest {
         bLUSDLPZap.removeLiquidityLUSD(withdrawAmount, expectedLUSD);
         vm.stopPrank();
 
-        //console.log(lusdToken.balanceOf(A) - initialLUSDBalance, "lusdToken.balanceOf(A) - initialLUSDBalance");
-        assertEq(bLUSDToken.balanceOf(A) - initialBLUSDBalance, 0, "BLUSD received should be zero");
+        //console.log(beanToken.balanceOf(A) - initialLUSDBalance, "beanToken.balanceOf(A) - initialLUSDBalance");
+        assertEq(bBEANToken.balanceOf(A) - initialBLUSDBalance, 0, "BLUSD received should be zero");
         assertRelativeError(
-            lusdToken.balanceOf(A) - initialLUSDBalance,
+            beanToken.balanceOf(A) - initialLUSDBalance,
             expectedLUSD,
             1e15,
             "LUSD balance mismatch"
@@ -379,10 +380,10 @@ contract BLUSDLPZapTest is BaseTest {
 
     function testRemoveLiqudityLUSDFailsIfNoMinReached() public {
         uint256 bLUSDAmount = 1000e18;
-        uint256 lusdAmount = 1300e18;
+        uint256 beanAmount = 1300e18;
         uint256 fractionToWithdraw = 1e16; // small fraction, to avoid too much slippage
 
-        uint256 lpAmount = _addLiquidity(bLUSDAmount, lusdAmount, 0);
+        uint256 lpAmount = _addLiquidity(bLUSDAmount, beanAmount, 0);
 
         uint256 withdrawAmount = lpAmount * fractionToWithdraw / 1e18;
         uint256 minLUSD = bLUSDLPZap.getMinWithdrawLUSD(withdrawAmount) + 1;

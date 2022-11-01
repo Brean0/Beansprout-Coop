@@ -25,8 +25,8 @@ contract GenerativeEggArtwork is EggTraitWeights, IBondNFTArtwork {
 
     struct BondData {
         uint256 tokenID;
-        uint256 lusdAmount;
-        uint256 claimedBLUSD;
+        uint256 beanAmount;
+        uint256 claimedBBEAN;
         uint256 startTime;
         uint256 endTime;
         uint80 initialHalfDna;
@@ -48,12 +48,12 @@ contract GenerativeEggArtwork is EggTraitWeights, IBondNFTArtwork {
         string[2] cardGradient;
     }
 
-    function _getEggSize(uint256 lusdAmount) internal pure returns (EggSize) {
+    function _getEggSize(uint256 beanAmount) internal pure returns (EggSize) {
         return (
-            lusdAmount <    1_000e18 ?  EggSize.Tiny   :
-            lusdAmount <   10_000e18 ?  EggSize.Small  :
-            lusdAmount <  100_000e18 ?  EggSize.Normal :
-         /* lusdAmount >= 100_000e18 */ EggSize.Big
+            beanAmount <    1_000e18 ?  EggSize.Tiny   :
+            beanAmount <   10_000e18 ?  EggSize.Small  :
+            beanAmount <  100_000e18 ?  EggSize.Normal :
+         /* beanAmount >= 100_000e18 */ EggSize.Big
         );
     }
 
@@ -71,7 +71,7 @@ contract GenerativeEggArtwork is EggTraitWeights, IBondNFTArtwork {
         _bondData.cardColor   = _getCardColor  (_cutDNA(dna, 26, 27), _bondData.borderColor);
         _bondData.shellColor  = _getShellColor (_cutDNA(dna, 53, 27), _bondData.borderColor);
 
-        _bondData.eggSize = _getEggSize(_bondData.lusdAmount);
+        _bondData.eggSize = _getEggSize(_bondData.beanAmount);
     }
 
     function _getSolidBorderColor(BorderColor _color) internal pure returns (string memory) {
@@ -150,8 +150,8 @@ contract GenerativeEggArtwork is EggTraitWeights, IBondNFTArtwork {
         BondData memory bondData;
         bondData.tokenID = _tokenID;
         (
-            bondData.lusdAmount,
-            bondData.claimedBLUSD,
+            bondData.beanAmount,
+            bondData.claimedBBEAN,
             bondData.startTime,
             bondData.endTime,
             bondData.status
@@ -167,7 +167,7 @@ contract GenerativeEggArtwork is EggTraitWeights, IBondNFTArtwork {
 
     // function testTokenURI(
     //     uint256 _tokenID,
-    //     uint256 _lusdAmount,
+    //     uint256 _beanAmount,
     //     uint256 _startTime,
     //     BorderColor _borderColor,
     //     CardColor _cardColor,
@@ -180,7 +180,7 @@ contract GenerativeEggArtwork is EggTraitWeights, IBondNFTArtwork {
     // {
     //     BondData memory bondData;
     //     bondData.tokenID = _tokenID;
-    //     bondData.lusdAmount = _lusdAmount;
+    //     bondData.beanAmount = _beanAmount;
     //     bondData.startTime = _startTime;
         
     //     bondData.borderColor = _borderColor;
@@ -206,7 +206,7 @@ contract GenerativeEggArtwork is EggTraitWeights, IBondNFTArtwork {
         return abi.encodePacked(
             '"attributes":[',
                 '{"display_type":"date","trait_type":"Created","value":', _bondData.startTime.toString(), '},',
-                '{"display_type":"number","trait_type":"Bond Amount","value":', _formatDecimal(_bondData.lusdAmount), '},',
+                '{"display_type":"number","trait_type":"Bond Amount","value":', _formatDecimal(_bondData.beanAmount), '},',
                 '{"trait_type":"Bond Status","value":"', _getBondStatusValue(IChickenBondManager.BondStatus(_bondData.status)), '"},',
                 _getMetadataCardAttributes(_bondData),
             ']'
@@ -556,7 +556,7 @@ contract GenerativeEggArtwork is EggTraitWeights, IBondNFTArtwork {
             '<text fill="#fff" font-family="''Arial Black'', Arial" font-size="40px" font-weight="800" text-anchor="middle" x="50%" y="72%">BOND AMOUNT</text>',
 
             '<text fill="#fff" font-family="''Arial Black'', Arial" font-size="64px" font-weight="800" text-anchor="middle" x="50%" y="81%">',
-                _formatDecimal(_bondData.lusdAmount),
+                _formatDecimal(_bondData.beanAmount),
             '</text>',
 
             '<text fill="#fff" font-family="''Arial Black'', Arial" font-size="30px" font-weight="800" text-anchor="middle" x="50%" y="91%" opacity="0.6">',

@@ -15,14 +15,14 @@ contract ChickenBondManagerTest is BaseTest {
     }
 
     function testYearnLUSDVaultHasInfiniteLUSDApproval() public {
-       uint256 allowance = lusdToken.allowance(address(chickenBondManager), address(bammSPVault));
+       uint256 allowance = beanToken.allowance(address(chickenBondManager), address(bammSPVault));
        assertEq(allowance, 2**256 - 1);
     }
 
     function testYearnCurveLUSDVaultHasInfiniteLUSDApproval() public {
         // TODO
     }
-
+    
     // --- createBond tests ---
 
     function testNFTEnumerationWorks() public {
@@ -186,13 +186,13 @@ contract ChickenBondManagerTest is BaseTest {
 
     function testCreateBondReducebLUSDBalanceOfBonder() public {
         // Get A balance before
-        uint256 balanceBefore = lusdToken.balanceOf(A);
+        uint256 balanceBefore = beanToken.balanceOf(A);
 
         // A creates bond
         createBondForUser(A, MIN_BOND_AMOUNT);
 
         // Check A balance has reduced by correct amount
-        uint256 balanceAfter = lusdToken.balanceOf(A);
+        uint256 balanceAfter = beanToken.balanceOf(A);
         assertEq(balanceBefore - MIN_BOND_AMOUNT, balanceAfter);
     }
 
@@ -342,7 +342,7 @@ contract ChickenBondManagerTest is BaseTest {
     function testCreateBondRevertsWithZeroInputAmount() public {
         // A tries to bond 0 LUSD
         vm.startPrank(A);
-        lusdToken.approve(address(chickenBondManager), 10e18);
+        beanToken.approve(address(chickenBondManager), 10e18);
         vm.expectRevert("CBM: Bond minimum amount not reached");
         chickenBondManager.createBond(0);
     }
@@ -421,14 +421,14 @@ contract ChickenBondManagerTest is BaseTest {
         uint256 B_bondID = bondNFT.totalSupply();
 
         // Get B lusd balance before
-        uint256 B_LUSDBalanceBefore = lusdToken.balanceOf(B);
+        uint256 B_LUSDBalanceBefore = beanToken.balanceOf(B);
 
         // B chickens out
         vm.startPrank(B);
         chickenBondManager.chickenOut(B_bondID, 0);
         vm.stopPrank();
 
-        uint256 B_LUSDBalanceAfter = lusdToken.balanceOf(B);
+        uint256 B_LUSDBalanceAfter = beanToken.balanceOf(B);
         assertApproximatelyEqual(B_LUSDBalanceAfter, B_LUSDBalanceBefore + bondAmount, 1e3);
     }
 
@@ -827,6 +827,7 @@ contract ChickenBondManagerTest is BaseTest {
     // --- calcSystemBackingRatio tests ---
 
     function testBackingRatioIsOneBeforeFirstChickenIn() public {
+        vm.makePersistent(0x0000000000000000000000000000000000000000);
         uint256 backingRatio_1 = chickenBondManager.calcSystemBackingRatio();
         assertEq(backingRatio_1, 1e18);
 
@@ -849,6 +850,7 @@ contract ChickenBondManagerTest is BaseTest {
 
     function testChickenInFailsAfterShortBondingInterval() public {
         // A creates bond
+        vm.makePersistent(0x0000000000000000000000000000000000000000);
         uint256 bondAmount = 100e18;
 
         createBondForUser(A, bondAmount);
@@ -865,6 +867,7 @@ contract ChickenBondManagerTest is BaseTest {
 
     function testChickenInSucceedsAfterShortBondingInterval(uint256 _interval) public {
         // Interval in range ]bootstrap period, bootstrap period + 1 week[
+        vm.makePersistent(0x0000000000000000000000000000000000000000);
         uint256 interval = coerce(
             _interval,
             chickenBondManager.BOOTSTRAP_PERIOD_CHICKEN_IN(), // wait at least bootstrap period before chicken-in
@@ -886,6 +889,7 @@ contract ChickenBondManagerTest is BaseTest {
     }
 
     function testChickenInTransfersAccruedBLUSDToBonder() public {
+        vm.makePersistent(0x0000000000000000000000000000000000000000);
         // A creates bond
         uint256 bondAmount = 100e18;
 
@@ -897,7 +901,7 @@ contract ChickenBondManagerTest is BaseTest {
         uint256 B_bondID = bondNFT.totalSupply();
 
         // Get B bLUSD balance before
-        uint256 B_bLUSDBalanceBefore = bLUSDToken.balanceOf(B);
+        uint256 B_bLUSDBalanceBefore = bBEANToken.balanceOf(B);
 
         // bootstrap period passes
         vm.warp(block.timestamp + chickenBondManager.BOOTSTRAP_PERIOD_CHICKEN_IN());
@@ -910,11 +914,12 @@ contract ChickenBondManagerTest is BaseTest {
         chickenBondManager.chickenIn(B_bondID);
 
         // Check B's bLUSD balance has increased by correct amount
-        uint256 B_bLUSDBalanceAfter = bLUSDToken.balanceOf(B);
+        uint256 B_bLUSDBalanceAfter = bBEANToken.balanceOf(B);
         assertEq(B_bLUSDBalanceAfter, B_bLUSDBalanceBefore + B_accruedBLUSD);
     }
 
     function testChickenInDoesNotChangeBondHolderLUSDBalance() public {
+        vm.makePersistent(0x0000000000000000000000000000000000000000);
         // A creates bond
         uint256 bondAmount = 100e18;
 
@@ -929,19 +934,20 @@ contract ChickenBondManagerTest is BaseTest {
         vm.warp(block.timestamp + chickenBondManager.BOOTSTRAP_PERIOD_CHICKEN_IN());
 
         // Get B LUSD balance before
-        uint256 B_LUSDBalanceBefore = lusdToken.balanceOf(B);
+        uint256 B_LUSDBalanceBefore = beanToken.balanceOf(B);
 
         // B chickens in
         vm.startPrank(B);
         chickenBondManager.chickenIn(B_bondID);
 
         // Check B's bLUSD balance has increased by correct amount
-        uint256 B_LUSDBalanceAfter = lusdToken.balanceOf(B);
+        uint256 B_LUSDBalanceAfter = beanToken.balanceOf(B);
         assertEq(B_LUSDBalanceAfter, B_LUSDBalanceBefore);
     }
 
 
     function testChickenInDecreasesTotalPendingLUSDByBondAmount() public {
+        vm.makePersistent(0x0000000000000000000000000000000000000000);
          // A creates bond
         uint256 bondAmount = 100e18;
 
@@ -968,6 +974,7 @@ contract ChickenBondManagerTest is BaseTest {
     }
 
     function testChickenInIncreasesTotalAcquiredLUSD() public {
+        vm.makePersistent(0x0000000000000000000000000000000000000000);
         // A creates bond
         uint256 bondAmount = 100e18;
 
@@ -994,6 +1001,7 @@ contract ChickenBondManagerTest is BaseTest {
     }
 
     function testChickenInDoesNotChangeTotalMinted() public {
+        vm.makePersistent(0x0000000000000000000000000000000000000000);
         // A creates bond
         uint256 bondAmount = 100e18;
 
@@ -1053,6 +1061,7 @@ contract ChickenBondManagerTest is BaseTest {
     }
 
     function testChickenInUpdatesBondData() public {
+        vm.makePersistent(0x0000000000000000000000000000000000000000);
         uint256 bondAmount = 100e18;
         uint256 expectedStartTime = block.timestamp;
         uint256 bondID = createBondForUser(A, bondAmount);
@@ -1103,6 +1112,7 @@ contract ChickenBondManagerTest is BaseTest {
     }
 
     function testChickenInRevertsAfterChickenIn() public {
+        vm.makePersistent(0x0000000000000000000000000000000000000000);
         uint256 bondID = createBondForUser(A, 100e18);
         vm.warp(block.timestamp + chickenBondManager.BOOTSTRAP_PERIOD_CHICKEN_IN());
         chickenInForUser(A, bondID);
@@ -1112,6 +1122,7 @@ contract ChickenBondManagerTest is BaseTest {
     }
 
     function testChickenOutRevertsAfterChickenIn() public {
+        vm.makePersistent(0x0000000000000000000000000000000000000000);
         uint256 bondID = createBondForUser(A, 100e18);
         vm.warp(block.timestamp + chickenBondManager.BOOTSTRAP_PERIOD_CHICKEN_IN());
         chickenInForUser(A, bondID);
@@ -1121,6 +1132,7 @@ contract ChickenBondManagerTest is BaseTest {
     }
 
     function testChickenInChargesChickenInFee() public {
+        vm.makePersistent(0x0000000000000000000000000000000000000000);
         // A creates bond
         uint256 bondAmount = 100e18;
 
@@ -1144,10 +1156,10 @@ contract ChickenBondManagerTest is BaseTest {
         vm.stopPrank();
 
         // check rewards contract has received rewards
-        assertApproximatelyEqual(lusdToken.balanceOf(address(curveLiquidityGauge)), _getChickenInFeeForAmount(bondAmount), 1, "Wrong Chicken In fee diverted to rewards contract");
+        assertApproximatelyEqual(beanToken.balanceOf(address(curveLiquidityGauge)), _getChickenInFeeForAmount(bondAmount), 1, "Wrong Chicken In fee diverted to rewards contract");
         // check accrued amount is reduced by Chicken In fee
         assertApproximatelyEqual(
-            bLUSDToken.balanceOf(B),
+            bBEANToken.balanceOf(B),
             _getAmountMinusChickenInFee(chickenBondManager.calcAccruedBLUSD(B_startTime, bondAmount, backingRatio, chickenBondManager.calcUpdatedAccrualParameter())),
             1000,
             "Wrong Chicken In fee applied to B"
@@ -1163,10 +1175,10 @@ contract ChickenBondManagerTest is BaseTest {
         vm.stopPrank();
 
         // check rewards contract has received rewards
-        assertApproximatelyEqual(lusdToken.balanceOf(address(curveLiquidityGauge)), 2 * _getChickenInFeeForAmount(bondAmount), 2, "Wrong Chicken In fee diverted to rewards contract");
+        assertApproximatelyEqual(beanToken.balanceOf(address(curveLiquidityGauge)), 2 * _getChickenInFeeForAmount(bondAmount), 2, "Wrong Chicken In fee diverted to rewards contract");
         // check accrued amount is reduced by Chicken In fee
         assertApproximatelyEqual(
-            bLUSDToken.balanceOf(A),
+            bBEANToken.balanceOf(A),
             _getAmountMinusChickenInFee(chickenBondManager.calcAccruedBLUSD(A_startTime, bondAmount, backingRatio, chickenBondManager.calcUpdatedAccrualParameter())),
             1000,
             "Wrong Chicken In fee applied to A"
@@ -1174,6 +1186,7 @@ contract ChickenBondManagerTest is BaseTest {
     }
 
     function testChickenInRevertsWhenCallerIsNotABonder() public {
+        vm.makePersistent(0x0000000000000000000000000000000000000000);
         // A creates bond
         uint256 bondAmount = 100e18;
 
@@ -1199,6 +1212,7 @@ contract ChickenBondManagerTest is BaseTest {
     }
 
     function testChickenInRevertsWhenBonderChickensInBondTheyDontOwn() public {
+        vm.makePersistent(0x0000000000000000000000000000000000000000);
          // A creates bond
         uint256 bondAmount = 100e18;
 
@@ -1222,7 +1236,8 @@ contract ChickenBondManagerTest is BaseTest {
         chickenBondManager.chickenIn(B_bondID);
     }
 
-     function testChickenInIncreasesPermanentLUSDBucket() public {
+    function testChickenInIncreasesPermanentLUSDBucket() public {
+        vm.makePersistent(0x0000000000000000000000000000000000000000);
         // A, B create bond
         uint256 bondAmount = 100e18;
 
@@ -1281,6 +1296,7 @@ contract ChickenBondManagerTest is BaseTest {
     // --- redemption tests ---
 
     function testRedeemFailsAfterShortPeriod() public {
+        vm.makePersistent(0x0000000000000000000000000000000000000000);
         // A creates bond
         uint256 bondAmount = 100e18;
 
@@ -1290,7 +1306,7 @@ contract ChickenBondManagerTest is BaseTest {
         vm.warp(block.timestamp + chickenBondManager.BOOTSTRAP_PERIOD_CHICKEN_IN());
 
         // Confirm A's bLUSD balance is zero
-        uint256 A_bLUSDBalance = bLUSDToken.balanceOf(A);
+        uint256 A_bLUSDBalance = bBEANToken.balanceOf(A);
         assertTrue(A_bLUSDBalance == 0);
 
         // A chickens in
@@ -1298,13 +1314,13 @@ contract ChickenBondManagerTest is BaseTest {
         chickenBondManager.chickenIn(A_bondID);
 
         // Check A's bLUSD balance is non-zero
-        A_bLUSDBalance = bLUSDToken.balanceOf(A);
+        A_bLUSDBalance = bBEANToken.balanceOf(A);
         assertTrue(A_bLUSDBalance > 0);
 
         // A transfers his LUSD to B
-        uint256 bLUSDBalance = bLUSDToken.balanceOf(A);
-        bLUSDToken.transfer(B, bLUSDBalance);
-        assertEq(bLUSDBalance, bLUSDToken.balanceOf(B));
+        uint256 bLUSDBalance = bBEANToken.balanceOf(A);
+        bBEANToken.transfer(B, bLUSDBalance);
+        assertEq(bLUSDBalance, bBEANToken.balanceOf(B));
         vm.stopPrank();
 
         // less than bootstrap period passes
@@ -1327,7 +1343,7 @@ contract ChickenBondManagerTest is BaseTest {
         vm.warp(block.timestamp + chickenBondManager.BOOTSTRAP_PERIOD_CHICKEN_IN());
 
         // Confirm A's bLUSD balance is zero
-        uint256 A_bLUSDBalance = bLUSDToken.balanceOf(A);
+        uint256 A_bLUSDBalance = bBEANToken.balanceOf(A);
         assertTrue(A_bLUSDBalance == 0);
 
         uint256 A_bondID = bondNFT.totalSupply();
@@ -1336,13 +1352,13 @@ contract ChickenBondManagerTest is BaseTest {
         chickenBondManager.chickenIn(A_bondID);
 
         // Check A's bLUSD balance is non-zero
-        A_bLUSDBalance = bLUSDToken.balanceOf(A);
+        A_bLUSDBalance = bBEANToken.balanceOf(A);
         assertTrue(A_bLUSDBalance > 0);
 
         // A transfers his LUSD to B
-        uint256 bLUSDBalance = bLUSDToken.balanceOf(A);
-        bLUSDToken.transfer(B, bLUSDBalance);
-        assertEq(bLUSDBalance, bLUSDToken.balanceOf(B));
+        uint256 bLUSDBalance = bBEANToken.balanceOf(A);
+        bBEANToken.transfer(B, bLUSDBalance);
+        assertEq(bLUSDBalance, bBEANToken.balanceOf(B));
         vm.stopPrank();
 
         // bootstrap period passes
@@ -1354,7 +1370,7 @@ contract ChickenBondManagerTest is BaseTest {
         chickenBondManager.redeem(bLUSDToRedeem, 0);
 
         // Check B's bLUSD balance has decreased
-        uint256 B_bLUSDBalanceAfter = bLUSDToken.balanceOf(B);
+        uint256 B_bLUSDBalanceAfter = bBEANToken.balanceOf(B);
         assertTrue(B_bLUSDBalanceAfter < bLUSDBalance);
         assertTrue(B_bLUSDBalanceAfter > 0);
     }
@@ -1369,7 +1385,7 @@ contract ChickenBondManagerTest is BaseTest {
         vm.warp(block.timestamp + chickenBondManager.BOOTSTRAP_PERIOD_CHICKEN_IN());
 
         // Confirm A's bLUSD balance is zero
-        uint256 A_bLUSDBalance = bLUSDToken.balanceOf(A);
+        uint256 A_bLUSDBalance = bBEANToken.balanceOf(A);
         assertTrue(A_bLUSDBalance == 0);
 
         uint256 A_bondID = bondNFT.totalSupply();
@@ -1378,13 +1394,13 @@ contract ChickenBondManagerTest is BaseTest {
         chickenBondManager.chickenIn(A_bondID);
 
         // Check A's bLUSD balance is non-zero
-        A_bLUSDBalance = bLUSDToken.balanceOf(A);
+        A_bLUSDBalance = bBEANToken.balanceOf(A);
         assertTrue(A_bLUSDBalance > 0);
 
         // A transfers his LUSD to B
-        uint256 bLUSDBalance = bLUSDToken.balanceOf(A);
-        bLUSDToken.transfer(B, bLUSDBalance);
-        assertEq(bLUSDBalance, bLUSDToken.balanceOf(B));
+        uint256 bLUSDBalance = bBEANToken.balanceOf(A);
+        bBEANToken.transfer(B, bLUSDBalance);
+        assertEq(bLUSDBalance, bBEANToken.balanceOf(B));
         vm.stopPrank();
 
         // bootstrap period passes
@@ -1414,7 +1430,7 @@ contract ChickenBondManagerTest is BaseTest {
         vm.warp(block.timestamp + chickenBondManager.BOOTSTRAP_PERIOD_CHICKEN_IN());
 
         // Confirm A's bLUSD balance is zero
-        uint256 A_bLUSDBalance = bLUSDToken.balanceOf(A);
+        uint256 A_bLUSDBalance = bBEANToken.balanceOf(A);
         assertTrue(A_bLUSDBalance == 0);
 
         uint256 A_bondID = bondNFT.totalSupply();
@@ -1423,26 +1439,26 @@ contract ChickenBondManagerTest is BaseTest {
         chickenBondManager.chickenIn(A_bondID);
 
         // Check A's bLUSD balance is non-zero
-        A_bLUSDBalance = bLUSDToken.balanceOf(A);
+        A_bLUSDBalance = bBEANToken.balanceOf(A);
         assertTrue(A_bLUSDBalance > 0);
 
         // A transfers his LUSD to B
-        uint256 bLUSDBalance = bLUSDToken.balanceOf(A);
-        bLUSDToken.transfer(B, bLUSDBalance);
-        assertEq(bLUSDBalance, bLUSDToken.balanceOf(B));
+        uint256 bLUSDBalance = bBEANToken.balanceOf(A);
+        bBEANToken.transfer(B, bLUSDBalance);
+        assertEq(bLUSDBalance, bBEANToken.balanceOf(B));
         vm.stopPrank();
 
         // bootstrap period passes
         vm.warp(block.timestamp + chickenBondManager.BOOTSTRAP_PERIOD_REDEEM());
 
-        uint256 totalBLUSDBefore = bLUSDToken.totalSupply();
+        uint256 totalBLUSDBefore = bBEANToken.totalSupply();
 
         // B redeems some bLUSD
         uint256 bLUSDToRedeem = bLUSDBalance / 2;
         vm.startPrank(B);
         chickenBondManager.redeem(bLUSDToRedeem, 0);
 
-        uint256 totalBLUSDAfter = bLUSDToken.totalSupply();
+        uint256 totalBLUSDAfter = bBEANToken.totalSupply();
 
          // Check total bLUSD supply has decreased and is non-zero
         assertTrue(totalBLUSDAfter < totalBLUSDBefore);
@@ -1459,7 +1475,7 @@ contract ChickenBondManagerTest is BaseTest {
         vm.warp(block.timestamp + chickenBondManager.BOOTSTRAP_PERIOD_CHICKEN_IN());
 
         // Confirm A's bLUSD balance is zero
-        uint256 A_bLUSDBalance = bLUSDToken.balanceOf(A);
+        uint256 A_bLUSDBalance = bBEANToken.balanceOf(A);
         assertTrue(A_bLUSDBalance == 0);
 
         uint256 A_bondID = bondNFT.totalSupply();
@@ -1468,26 +1484,26 @@ contract ChickenBondManagerTest is BaseTest {
         chickenBondManager.chickenIn(A_bondID);
 
         // Check A's bLUSD balance is non-zero
-        A_bLUSDBalance = bLUSDToken.balanceOf(A);
+        A_bLUSDBalance = bBEANToken.balanceOf(A);
         assertTrue(A_bLUSDBalance > 0);
 
         // A transfers his LUSD to B
-        uint256 bLUSDBalance = bLUSDToken.balanceOf(A);
-        bLUSDToken.transfer(B, bLUSDBalance);
-        assertEq(bLUSDBalance, bLUSDToken.balanceOf(B));
+        uint256 bLUSDBalance = bBEANToken.balanceOf(A);
+        bBEANToken.transfer(B, bLUSDBalance);
+        assertEq(bLUSDBalance, bBEANToken.balanceOf(B));
         vm.stopPrank();
 
         // bootstrap period passes
         vm.warp(block.timestamp + chickenBondManager.BOOTSTRAP_PERIOD_REDEEM());
 
-        uint256 B_lusdBalanceBefore = lusdToken.balanceOf(B);
+        uint256 B_lusdBalanceBefore = beanToken.balanceOf(B);
 
         // B redeems some bLUSD
         uint256 bLUSDToRedeem = bLUSDBalance / 2;
         vm.startPrank(B);
         chickenBondManager.redeem(bLUSDToRedeem, 0);
 
-        uint256 B_lusdBalanceAfter = lusdToken.balanceOf(B);
+        uint256 B_lusdBalanceAfter = beanToken.balanceOf(B);
 
         // Check B's LUSD Balance has increased
         assertTrue(B_lusdBalanceAfter > B_lusdBalanceBefore);
@@ -1508,7 +1524,7 @@ contract ChickenBondManagerTest is BaseTest {
         vm.warp(block.timestamp + chickenBondManager.BOOTSTRAP_PERIOD_CHICKEN_IN());
 
         // Confirm A's bLUSD balance is zero
-        uint256 A_bLUSDBalance = bLUSDToken.balanceOf(A);
+        uint256 A_bLUSDBalance = bBEANToken.balanceOf(A);
         assertEq(A_bLUSDBalance, 0);
 
         uint256 A_bondID = bondNFT.totalSupply();
@@ -1517,15 +1533,15 @@ contract ChickenBondManagerTest is BaseTest {
         chickenBondManager.chickenIn(A_bondID);
 
         // Check A's bLUSD balance is non-zero
-        A_bLUSDBalance = bLUSDToken.balanceOf(A);
+        A_bLUSDBalance = bBEANToken.balanceOf(A);
         assertGt(A_bLUSDBalance, 0);
 
         // A transfers his LUSD to B
-        uint256 bLUSDBalance = bLUSDToken.balanceOf(A);
+        uint256 bLUSDBalance = bBEANToken.balanceOf(A);
         assertGt(bLUSDBalance, 0);
-        bLUSDToken.transfer(B, bLUSDBalance);
-        assertEq(bLUSDBalance, bLUSDToken.balanceOf(B));
-        assertEq(bLUSDToken.totalSupply(), bLUSDToken.balanceOf(B));
+        bBEANToken.transfer(B, bLUSDBalance);
+        assertEq(bLUSDBalance, bBEANToken.balanceOf(B));
+        assertEq(bBEANToken.totalSupply(), bBEANToken.balanceOf(B));
         vm.stopPrank();
 
         // bootstrap period passes
@@ -1540,7 +1556,7 @@ contract ChickenBondManagerTest is BaseTest {
 
         vm.startPrank(B);
 
-        assertEq(bLUSDToRedeem, bLUSDToken.totalSupply() * redemptionFraction / 1e18);
+        assertEq(bLUSDToRedeem, bBEANToken.totalSupply() * redemptionFraction / 1e18);
         chickenBondManager.redeem(bLUSDToRedeem, 0);
 
         // Check acquired LUSD in Yearn has decreased by correct fraction
@@ -1566,7 +1582,7 @@ contract ChickenBondManagerTest is BaseTest {
         vm.warp(block.timestamp + chickenBondManager.BOOTSTRAP_PERIOD_CHICKEN_IN());
 
         // Confirm A's bLUSD balance is zero
-        uint256 A_bLUSDBalance = bLUSDToken.balanceOf(A);
+        uint256 A_bLUSDBalance = bBEANToken.balanceOf(A);
         assertTrue(A_bLUSDBalance == 0);
 
         uint256 A_bondID = bondNFT.totalSupply();
@@ -1575,28 +1591,28 @@ contract ChickenBondManagerTest is BaseTest {
         chickenBondManager.chickenIn(A_bondID);
 
         // Check A's bLUSD balance is non-zero
-        uint256 bLUSDBalance = bLUSDToken.balanceOf(A);
+        uint256 bLUSDBalance = bBEANToken.balanceOf(A);
         assertTrue(bLUSDBalance > 0);
 
         // A transfers his LUSD to B
-        bLUSDToken.transfer(B, bLUSDBalance);
-        assertEq(bLUSDBalance, bLUSDToken.balanceOf(B));
+        bBEANToken.transfer(B, bLUSDBalance);
+        assertEq(bLUSDBalance, bBEANToken.balanceOf(B));
         vm.stopPrank();
 
         // bootstrap period passes
         vm.warp(block.timestamp + chickenBondManager.BOOTSTRAP_PERIOD_REDEEM());
 
-        uint256 B_lusdBalanceBefore = lusdToken.balanceOf(B);
+        uint256 B_lusdBalanceBefore = beanToken.balanceOf(B);
         uint256 backingRatio0 = chickenBondManager.calcSystemBackingRatio();
 
-        //assertEq(chickenBondManager.getTotalAcquiredLUSD(), bLUSDToken.totalSupply());
+        //assertEq(chickenBondManager.getTotalAcquiredLUSD(), bBEANToken.totalSupply());
         assertEq(chickenBondManager.calcRedemptionFeePercentage(0), 0);
         // B redeems
         uint256 bLUSDToRedeem = bLUSDBalance / 2;
         vm.startPrank(B);
         chickenBondManager.redeem(bLUSDToRedeem, 0);
 
-        uint256 B_lusdBalanceAfter1 = lusdToken.balanceOf(B);
+        uint256 B_lusdBalanceAfter1 = beanToken.balanceOf(B);
         uint256 backingRatio1 = chickenBondManager.calcSystemBackingRatio();
 
         // Check B's Y tokens Balance converted to LUSD has increased by exactly redemption amount after redemption fee,
@@ -1613,8 +1629,8 @@ contract ChickenBondManagerTest is BaseTest {
 
         // B redeems again
         redemptionFraction = 3e18/4;
-        chickenBondManager.redeem(bLUSDToken.balanceOf(B) * redemptionFraction / 1e18, 0);
-        uint256 B_lusdBalanceAfter2 = lusdToken.balanceOf(B);
+        chickenBondManager.redeem(bBEANToken.balanceOf(B) * redemptionFraction / 1e18, 0);
+        uint256 B_lusdBalanceAfter2 = beanToken.balanceOf(B);
         // Check B's Y tokens Balance converted to LUSD has increased by less than redemption amount
         // backing ratio was 1, but redemption fee was non zero
         assertGt(
@@ -1642,15 +1658,15 @@ contract ChickenBondManagerTest is BaseTest {
         chickenBondManager.chickenIn(A_bondID);
 
         // A transfers some bLUSD to B
-        uint256 bLUSDBalance = bLUSDToken.balanceOf(A);
-        bLUSDToken.transfer(B, bLUSDBalance);
-        assertEq(bLUSDBalance, bLUSDToken.balanceOf(B));
+        uint256 bLUSDBalance = bBEANToken.balanceOf(A);
+        bBEANToken.transfer(B, bLUSDBalance);
+        assertEq(bLUSDBalance, bBEANToken.balanceOf(B));
         vm.stopPrank();
 
         // bootstrap period passes
         vm.warp(block.timestamp + chickenBondManager.BOOTSTRAP_PERIOD_REDEEM());
 
-        uint256 B_bLUSDBalance = bLUSDToken.balanceOf(B);
+        uint256 B_bLUSDBalance = bBEANToken.balanceOf(B);
         assertGt(B_bLUSDBalance, 0);
 
         // B tries to redeem more LUSD than they have
@@ -1663,7 +1679,7 @@ contract ChickenBondManagerTest is BaseTest {
         // to withdraw more LUSD than is held by the system
         // TODO: Fix. Seems to revert with no reason string (or not catch it)?
         // vm.expectRevert("ERC20: transfer amount exceeds balance");
-        // chickenBondManager.redeem(B_bLUSDBalance + bLUSDToken.totalSupply(), 0);
+        // chickenBondManager.redeem(B_bLUSDBalance + bBEANToken.totalSupply(), 0);
     }
 
     function testRedeemRevertsWithZeroInputAmount() public {
@@ -1686,7 +1702,7 @@ contract ChickenBondManagerTest is BaseTest {
         vm.warp(block.timestamp + chickenBondManager.BOOTSTRAP_PERIOD_REDEEM());
 
         // Check B's bLUSD balance is zero
-        uint256 B_bLUSDBalance = bLUSDToken.balanceOf(B);
+        uint256 B_bLUSDBalance = bBEANToken.balanceOf(B);
         assertEq(B_bLUSDBalance, 0);
 
         // B tries to redeem with 0 bLUSD balance
@@ -1710,8 +1726,8 @@ contract ChickenBondManagerTest is BaseTest {
         assertEq(chickenBondManager.getTotalAcquiredLUSD(), 0);
 
         // Cheat: tip 5e18 bLUSD to B
-        deal(address(bLUSDToken), B, 5e18);
-        uint256 B_bLUSDBalance = bLUSDToken.balanceOf(B);
+        deal(address(bBEANToken), B, 5e18);
+        uint256 B_bLUSDBalance = bBEANToken.balanceOf(B);
         assertEq(B_bLUSDBalance, 5e18);
 
         // B tries to redeem his bLUSD while there is 0 total acquired LUSD
@@ -1738,18 +1754,18 @@ contract ChickenBondManagerTest is BaseTest {
         _depositAmount = coerce(_depositAmount, 10, 1e27);
 
         // Tip CBM some LUSD
-        deal(address(lusdToken), address(chickenBondManager), _depositAmount);
+        deal(address(beanToken), address(chickenBondManager), _depositAmount);
 
         // Artificially deposit LUSD to B.Protocol, as CBM
         vm.startPrank(address(chickenBondManager));
         bammSPVault.deposit(_depositAmount);
-        assertEq(lusdToken.balanceOf(address(chickenBondManager)), 0);
+        assertEq(beanToken.balanceOf(address(chickenBondManager)), 0);
 
         // Artificially withdraw all as CBM
         bammSPVault.withdraw(_depositAmount, address(chickenBondManager));
 
         // Check that CBM was able to withdraw almost exactly its initial deposit
-        assertApproximatelyEqual(_depositAmount, lusdToken.balanceOf(address(chickenBondManager)), 1e3);
+        assertApproximatelyEqual(_depositAmount, beanToken.balanceOf(address(chickenBondManager)), 1e3);
     }
 
     // --- Controller tests ---
@@ -1898,13 +1914,13 @@ contract ChickenBondManagerTest is BaseTest {
     }
 
     struct ArbitraryBondParams {
-        uint256 lusdAmount;
+        uint256 beanAmount;
         uint256 startTimeDelta;
     }
 
     function _coerceLUSDAmounts(ArbitraryBondParams[] memory _params, uint256 a, uint256 b) internal pure {
         for (uint256 i = 0; i < _params.length; ++i) {
-            _params[i].lusdAmount = coerce(_params[i].lusdAmount, a, b);
+            _params[i].beanAmount = coerce(_params[i].beanAmount, a, b);
         }
     }
 
@@ -1932,7 +1948,7 @@ contract ChickenBondManagerTest is BaseTest {
         uint256 total = 0;
 
         for (uint256 i = 0; i < _params.length; ++i) {
-            total += _params[i].lusdAmount;
+            total += _params[i].beanAmount;
         }
 
         return total;
@@ -1943,8 +1959,8 @@ contract ChickenBondManagerTest is BaseTest {
         uint256 denominator = 0;
 
         for (uint256 i = 0; i < _params.length; ++i) {
-            numerator += _params[i].lusdAmount * _params[i].startTimeDelta;
-            denominator += _params[i].lusdAmount;
+            numerator += _params[i].beanAmount * _params[i].startTimeDelta;
+            denominator += _params[i].beanAmount;
         }
 
         assertGt(denominator, 0);
@@ -1962,13 +1978,13 @@ contract ChickenBondManagerTest is BaseTest {
         uint256 prevStartTimeDelta = 0;
 
         // This test requires more LUSD than the others
-        deal(address(lusdToken), A, _calcTotalLUSDAmount(_params));
+        deal(address(beanToken), A, _calcTotalLUSDAmount(_params));
 
         for (uint256 i = 0; i < _params.length; ++i) {
             // Make sure we're not about to go back in time
             assertGe(_params[i].startTimeDelta, prevStartTimeDelta);
             vm.warp(deploymentTimestamp + _params[i].startTimeDelta);
-            createBondForUser(A, _params[i].lusdAmount);
+            createBondForUser(A, _params[i].beanAmount);
 
             prevStartTimeDelta = _params[i].startTimeDelta;
         }
@@ -2216,7 +2232,7 @@ contract ChickenBondManagerTest is BaseTest {
 
         // Redeem some bLUSD
         uint256 someBLusd = accrued / 2;
-        uint256 lusdRedemptionAmountPlusFee = acquiredBeforeRedeem * someBLusd / bLUSDToken.totalSupply();
+        uint256 lusdRedemptionAmountPlusFee = acquiredBeforeRedeem * someBLusd / bBEANToken.totalSupply();
         vm.prank(A);
         (uint256 lusdRedemptionAmount,) = chickenBondManager.redeem(someBLusd, 0);
 
@@ -2277,6 +2293,7 @@ contract ChickenBondManagerTest is BaseTest {
     }
 
     function testCICounterDoesntChangeUponCO() public {
+        vm.makePersistent(0x0000000000000000000000000000000000000000);
         uint256 bondAmount = 100e18;
         uint256 A_bondId = createBondForUser(A, bondAmount);
         uint256 B_bondId = createBondForUser(B, bondAmount);
@@ -2294,6 +2311,7 @@ contract ChickenBondManagerTest is BaseTest {
     }
 
     function testCICounterDoesntChangeUponBondCreation() public {
+        vm.makePersistent(0x0000000000000000000000000000000000000000);
         uint256 bondAmount = 100e18;
         uint256 A_bondId = createBondForUser(A, bondAmount);
         createBondForUser(B, bondAmount);
@@ -2391,6 +2409,7 @@ contract ChickenBondManagerTest is BaseTest {
     }
 
     function testBondCreationIncreasesOpenBondsCount() public {
+        vm.makePersistent(0x0000000000000000000000000000000000000000);
         uint256 bondAmount = 100e18;
 
         uint256 openBondsCount = chickenBondManager.getOpenBondCount();
@@ -2454,11 +2473,11 @@ contract ChickenBondManagerTest is BaseTest {
 
     function _createPermitSignature(address owner, uint256 bondAmount, uint256 deadline) internal returns (uint8, bytes32, bytes32) {
         address spender = address(chickenBondManager);
-        uint256 nonce = lusdToken.nonces(owner);
+        uint256 nonce = beanToken.nonces(owner);
 
         bytes32 permitStructHash = keccak256(
             abi.encode(
-                lusdToken.permitTypeHash(),
+                beanToken.permitTypeHash(),
                 owner,
                 spender,
                 bondAmount,
@@ -2468,7 +2487,7 @@ contract ChickenBondManagerTest is BaseTest {
         );
 
         bytes32 permitDigest = keccak256(
-            abi.encodePacked("\x19\x01", lusdToken.domainSeparator(), permitStructHash)
+            abi.encodePacked("\x19\x01", beanToken.domainSeparator(), permitStructHash)
         );
 
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(accounts.accountsPks(0), permitDigest);
@@ -2508,10 +2527,10 @@ contract ChickenBondManagerTest is BaseTest {
         // the createBondWithPermit txn from succeeding
         (uint8 v, bytes32 r, bytes32 s) = _createPermitSignature(owner, bondAmount, deadline);
         address notOwner = accountsList[1];
-        assertEq(lusdToken.allowance(owner, address(chickenBondManager)), 0, "Initial allowance should be zero");
+        assertEq(beanToken.allowance(owner, address(chickenBondManager)), 0, "Initial allowance should be zero");
         vm.prank(notOwner);
-        lusdToken.permit(owner, address(chickenBondManager), bondAmount, deadline, v, r, s);
-        assertEq(lusdToken.allowance(owner, address(chickenBondManager)), bondAmount, "Allowance after permit should be bond amount");
+        beanToken.permit(owner, address(chickenBondManager), bondAmount, deadline, v, r, s);
+        assertEq(beanToken.allowance(owner, address(chickenBondManager)), bondAmount, "Allowance after permit should be bond amount");
 
         _createBondWithPermit(owner, bondAmount, deadline);
         uint256 activeBondsAfter = chickenBondManager.getOpenBondCount();
@@ -2544,14 +2563,14 @@ contract ChickenBondManagerTest is BaseTest {
 
         vm.warp(block.timestamp + 30 days);
         // Check bLUSD balance is zero
-        uint256 bLUSDBalance = bLUSDToken.balanceOf(owner);
+        uint256 bLUSDBalance = bBEANToken.balanceOf(owner);
         assertEq(bLUSDBalance, 0);
 
         vm.prank(owner);
         chickenBondManager.chickenIn(bondID);
 
         // Check bLUSD balance is not zero
-        bLUSDBalance = bLUSDToken.balanceOf(owner);
+        bLUSDBalance = bBEANToken.balanceOf(owner);
         assertGt(bLUSDBalance, 0);
 
         assertEq(chickenBondManager.getOpenBondCount(), 0);

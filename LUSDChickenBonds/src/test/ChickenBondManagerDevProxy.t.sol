@@ -9,7 +9,7 @@ contract ChickenBondManagerDevProxyTest is DevTestSetup {
     DSProxy proxyA;
     ChickenBondOperationsScript chickenBondOperationsScript;
 
-    function setUp() public override {
+    function setUp() public override virtual {
         super.setUp();
 
         // Create DSProxy factory
@@ -25,7 +25,7 @@ contract ChickenBondManagerDevProxyTest is DevTestSetup {
 
     function createBondForProxy(address _user, uint256 _bondAmount) internal returns (uint256) {
         vm.startPrank(_user);
-        lusdToken.approve(address(chickenBondOperationsScript), _bondAmount);
+        beanToken.approve(address(chickenBondOperationsScript), _bondAmount);
         chickenBondOperationsScript.createBond(_bondAmount);
         vm.stopPrank();
 
@@ -52,11 +52,11 @@ contract ChickenBondManagerDevProxyTest is DevTestSetup {
         vm.stopPrank();
 
         // checks
-        assertGt(bLUSDToken.balanceOf(A), 0, "Should have received some bLUSD");
+        assertGt(bBEANToken.balanceOf(A), 0, "Should have received some bLUSD");
     }
 
     function testChickenOut() public {
-        uint256 previousBalance = lusdToken.balanceOf(A);
+        uint256 previousBalance = beanToken.balanceOf(A);
 
         // bond
         uint256 bondId = createBondForProxy(A, MIN_BOND_AMOUNT);
@@ -67,7 +67,7 @@ contract ChickenBondManagerDevProxyTest is DevTestSetup {
         vm.stopPrank();
 
         // checks
-        assertEq(lusdToken.balanceOf(A), previousBalance, "LUSD balance doesn't match");
+        assertEq(beanToken.balanceOf(A), previousBalance, "LUSD balance doesn't match");
     }
 
     function testRedeem() public {
@@ -89,11 +89,11 @@ contract ChickenBondManagerDevProxyTest is DevTestSetup {
         // wait for bootstrap period
         vm.warp(block.timestamp + chickenBondManager.BOOTSTRAP_PERIOD_REDEEM());
 
-        uint256 previousLUSDBalance = lusdToken.balanceOf(A);
+        uint256 previousLUSDBalance = beanToken.balanceOf(A);
         // redeem
         vm.startPrank(A);
-        uint256 bLUSDBalance = bLUSDToken.balanceOf(A);
-        bLUSDToken.approve(address(chickenBondOperationsScript), bLUSDBalance);
+        uint256 bLUSDBalance = bBEANToken.balanceOf(A);
+        bBEANToken.approve(address(chickenBondOperationsScript), bLUSDBalance);
         chickenBondOperationsScript.redeem(bLUSDBalance / 2, 0);
         vm.stopPrank();
 
@@ -102,7 +102,7 @@ contract ChickenBondManagerDevProxyTest is DevTestSetup {
         // redemption fee: 0
         // Therefore, fraction with fee applied: 1/2
         uint256 expectedLUSDBalance = accruedBLUSD * backingRatio / 1e18 / 2;
-        assertEq(lusdToken.balanceOf(A), previousLUSDBalance + expectedLUSDBalance, "LUSD balance doesn't match");
+        assertEq(beanToken.balanceOf(A), previousLUSDBalance + expectedLUSDBalance, "LUSD balance doesn't match");
         assertEq(yearnCurveVault.balanceOf(A), 0, "Curve yTokens balance doesn't match");
     }
 
@@ -123,12 +123,12 @@ contract ChickenBondManagerDevProxyTest is DevTestSetup {
         // wait for bootstrap period
         vm.warp(block.timestamp + chickenBondManager.BOOTSTRAP_PERIOD_REDEEM());
 
-        uint256 previousBalance = lusdToken.balanceOf(A);
+        uint256 previousBalance = beanToken.balanceOf(A);
 
         // redeem
         vm.startPrank(A);
-        uint256 bLUSDBalance = bLUSDToken.balanceOf(A);
-        bLUSDToken.approve(address(chickenBondOperationsScript), bLUSDBalance);
+        uint256 bLUSDBalance = bBEANToken.balanceOf(A);
+        bBEANToken.approve(address(chickenBondOperationsScript), bLUSDBalance);
         chickenBondOperationsScript.redeemAndWithdraw(bLUSDBalance / 2, 0);
         vm.stopPrank();
 
@@ -137,6 +137,6 @@ contract ChickenBondManagerDevProxyTest is DevTestSetup {
         // redemption fee: 0
         // Therefore, fraction with fee applied: 1/2
         uint256 expectedLUSDBalance = accruedBLUSD * backingRatio / 1e18 / 2;
-        assertEq(lusdToken.balanceOf(A) - previousBalance, expectedLUSDBalance, "LUSD balance doesn't match");
+        assertEq(beanToken.balanceOf(A) - previousBalance, expectedLUSDBalance, "LUSD balance doesn't match");
     }
 }

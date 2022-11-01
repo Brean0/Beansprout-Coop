@@ -30,8 +30,8 @@ contract DummyChickenBondManager {
     BondNFT bondNFT;
 
     struct BondData {
-        uint256 lusdAmount;
-        uint64 claimedBLUSD;
+        uint256 beanAmount;
+        uint64 claimedBBEAN;
         uint64 startTime;
         uint64 endTime;
         uint8 status;
@@ -194,8 +194,8 @@ contract BondNFTTest is BaseTest {
         chickenBondManager.setBondData(
             bondID,
             DummyChickenBondManager.BondData({
-                lusdAmount: 1e18, // doesn't matter
-                claimedBLUSD: 0, // doesn't matter
+                beanAmount: 1e18, // doesn't matter
+                claimedBBEAN: 0, // doesn't matter
                 startTime: uint64(endTime), // doesn't matter, just use same as endTime
                 endTime: uint64(endTime),
                 status: uint8(

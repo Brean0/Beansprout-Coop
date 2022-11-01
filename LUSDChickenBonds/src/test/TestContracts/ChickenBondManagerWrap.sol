@@ -26,8 +26,8 @@ contract ChickenBondManagerWrap is ChickenBondManager {
         return _minutesPassedSinceLastRedemption();
     }
 
-    function calcAccruedBLUSD(uint256 _startTime, uint256 _lusdAmount, uint256 _backingRatio, uint256 _accrualParameter) external view returns (uint256) {
-        uint256 bondBLUSDCap = _calcBondBLUSDCap(_lusdAmount, _backingRatio);
+    function calcAccruedBLUSD(uint256 _startTime, uint256 _beanAmount, uint256 _backingRatio, uint256 _accrualParameter) external view returns (uint256) {
+        uint256 bondBLUSDCap = _calcBondBLUSDCap(_beanAmount, _backingRatio);
         return _calcAccruedAmount(_startTime, bondBLUSDCap, _accrualParameter);
     }
 

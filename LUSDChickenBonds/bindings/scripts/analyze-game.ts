@@ -11,13 +11,13 @@ import manifest from "../deployments/goerli.json";
 
 // const manifest = {
 //   addresses: {
-//     lusdToken: "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+//     beanToken: "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
 //     curvePool: "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
 //     curveBasePool: "0x0165878A594ca255338adfa4d48449f69242Eb8F",
 //     bondNFT: "0x68B1D87F95878fE05B998F19b66F4baba5De1aed",
 //     bondNFTArtwork: "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
 //     chickenBondManager: "0x59b670e9fA9D0A427751Af201D676719a970857b",
-//     bLUSDToken: "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+//     bBEANToken: "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
 //     bLUSDCurveToken: "0xd8058efe0198ae9dD7D563e1b4938Dcbc86A1F81",
 //     bLUSDCurvePool: "0x6D544390Eb535d61e196c87d6B9c80dCD8628Acd",
 //     curveLiquidityGauge: "0xB1eDe3F5AC8654124Cb5124aDf0Fd3885CbDD1F7",
@@ -137,8 +137,8 @@ const provider = new BatchedJsonRpcProvider(rpcUrl);
 provider.chainId = manifest.chainId;
 
 const {
-  lusdToken,
-  bLUSDToken,
+  beanToken,
+  bBEANToken,
   bLUSDCurveToken,
   bondNFT,
   chickenBondManager,
@@ -148,13 +148,13 @@ const {
 
 const main = async () => {
   const lusdTransfers = await provider
-    .getLogs({ ...lusdToken.filters.Transfer(), fromBlock, toBlock })
-    .then(logs => lusdToken.extractEvents(logs, "Transfer"))
+    .getLogs({ ...beanToken.filters.Transfer(), fromBlock, toBlock })
+    .then(logs => beanToken.extractEvents(logs, "Transfer"))
     .then(toEnumerable);
 
   const bLUSDTransfers = await provider
-    .getLogs({ ...bLUSDToken.filters.Transfer(), fromBlock, toBlock })
-    .then(logs => bLUSDToken.extractEvents(logs, "Transfer"))
+    .getLogs({ ...bBEANToken.filters.Transfer(), fromBlock, toBlock })
+    .then(logs => bBEANToken.extractEvents(logs, "Transfer"))
     .then(toEnumerable);
 
   const lpTokenTransfers = await provider
@@ -173,12 +173,12 @@ const main = async () => {
     curvePoolLUSDBalance,
     lpTotalSupply,
     backingRatio,
-    pendingLUSD,
+    pendingBEAN,
     acquiredLUSD,
-    permanentLUSD
+    permanentBEAN
   ] = await Promise.all([
-    lusdToken.tapAmount({ blockTag: toBlock }),
-    bLUSDToken.totalSupply({ blockTag: toBlock }).then(numberify),
+    beanToken.tapAmount({ blockTag: toBlock }),
+    bBEANToken.totalSupply({ blockTag: toBlock }).then(numberify),
     bondNFT.totalSupply({ blockTag: toBlock }),
     bLUSDCurvePool
       .price_oracle({ blockTag: toBlock })
@@ -209,7 +209,7 @@ const main = async () => {
           active: bondData.status === BondStatus.Active ? 1 : 0,
           chickenedIn: bondData.status === BondStatus.ChickenedIn ? 1 : 0,
           chickenedOut: bondData.status === BondStatus.ChickenedOut ? 1 : 0,
-          bondAmount: numberify(bondData.lusdAmount),
+          bondAmount: numberify(bondData.beanAmount),
           accruedBLUSD: numberify(accruedBLUSD)
         }))
       )
@@ -404,7 +404,7 @@ const main = async () => {
     toCsv(portfolios.toArray(), `tmp/portfolios_${suffix}.csv`);
   };
 
-  const bLUSDMigrationPrice = (acquiredLUSD + permanentLUSD) / bLUSDSupply;
+  const bLUSDMigrationPrice = (acquiredLUSD + permanentBEAN) / bLUSDSupply;
   const lpTokenOriginalPrice = lpTokenPoolPrice * bLUSDOraclePrice;
 
   const getLpTokenProportionalWithdrawalValue = (bLUSDPrice: number) =>
@@ -489,9 +489,9 @@ const main = async () => {
       lpTokenMigrationPrice,
       lpTokenRedemptionPrice,
       backingRatio,
-      pendingLUSD,
+      pendingBEAN,
       acquiredLUSD,
-      permanentLUSD,
+      permanentBEAN,
       lpTotalSupply,
       remainingLPReward
     })

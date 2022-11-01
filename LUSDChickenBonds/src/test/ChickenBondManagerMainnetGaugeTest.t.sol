@@ -11,9 +11,9 @@ contract ChickenBondManagerMainnetGaugeTest is BaseTest, MainnetTestSetup {
     }
 
     function approveTokens() internal {
-        lusdToken.approve(address(chickenBondManager), type(uint256).max);
-        lusdToken.approve(address(bLUSDCurvePool), type(uint256).max);
-        bLUSDToken.approve(address(bLUSDCurvePool), type(uint256).max);
+        beanToken.approve(address(chickenBondManager), type(uint256).max);
+        beanToken.approve(address(bLUSDCurvePool), type(uint256).max);
+        bBEANToken.approve(address(bLUSDCurvePool), type(uint256).max);
         bLUSDCurveToken.approve(address(curveLiquidityGauge), type(uint256).max);
     }
 
@@ -22,33 +22,33 @@ contract ChickenBondManagerMainnetGaugeTest is BaseTest, MainnetTestSetup {
         returns (uint256 generatedLUSDReward)
     {
         uint256 bondAmount = 100_000e18;
-        deal(address(lusdToken), this.getCurrentPrankster(), bondAmount);
+        deal(address(beanToken), this.getCurrentPrankster(), bondAmount);
         uint256 bondID = chickenBondManager.createBond(bondAmount);
         generatedLUSDReward = bondAmount * CHICKEN_IN_AMM_FEE / 1e18;
 
         // If this is to be the first chicken-in, we must wait until the bootstrap period is over
-        if (bLUSDToken.totalSupply() == 0) {
+        if (bBEANToken.totalSupply() == 0) {
             vm.warp(block.timestamp + BOOTSTRAP_PERIOD_CHICKEN_IN);
         }
 
-        uint256 gaugeLUSDBefore = lusdToken.balanceOf(address(curveLiquidityGauge));
+        uint256 gaugeLUSDBefore = beanToken.balanceOf(address(curveLiquidityGauge));
         chickenBondManager.chickenIn(bondID);
-        uint256 gaugeLUSDIncrease = lusdToken.balanceOf(address(curveLiquidityGauge)) - gaugeLUSDBefore;
+        uint256 gaugeLUSDIncrease = beanToken.balanceOf(address(curveLiquidityGauge)) - gaugeLUSDBefore;
 
         assertEqDecimal(gaugeLUSDIncrease, generatedLUSDReward, 18);
     }
 
     function addAllBLUSDAsLiquidity(uint256 lusdPerBLUSD) internal returns (uint256 lp) {
-        uint256 bLUSDAmount = bLUSDToken.balanceOf(this.getCurrentPrankster());
-        uint256 lusdAmount = bLUSDAmount * lusdPerBLUSD / 1e18;
-        deal(address(lusdToken), this.getCurrentPrankster(), lusdAmount);
-        lp = bLUSDCurvePool.add_liquidity([bLUSDAmount, lusdAmount], 0);
+        uint256 bLUSDAmount = bBEANToken.balanceOf(this.getCurrentPrankster());
+        uint256 beanAmount = bLUSDAmount * lusdPerBLUSD / 1e18;
+        deal(address(beanToken), this.getCurrentPrankster(), beanAmount);
+        lp = bLUSDCurvePool.add_liquidity([bLUSDAmount, beanAmount], 0);
     }
 
     function claimRewards() internal returns (uint256 lusdReceived) {
-        uint256 lusdBefore = lusdToken.balanceOf(this.getCurrentPrankster());
+        uint256 lusdBefore = beanToken.balanceOf(this.getCurrentPrankster());
         curveLiquidityGauge.claim_rewards();
-        lusdReceived = lusdToken.balanceOf(this.getCurrentPrankster()) - lusdBefore;
+        lusdReceived = beanToken.balanceOf(this.getCurrentPrankster()) - lusdBefore;
     }
 
     function testGaugeRewardsLPsWithLUSD() public {
@@ -62,7 +62,7 @@ contract ChickenBondManagerMainnetGaugeTest is BaseTest, MainnetTestSetup {
             assertEqDecimal(curveLiquidityGauge.balanceOf(A), lp, 18);
 
             vm.warp(block.timestamp + 1 days);
-            uint256 claimableLUSD = curveLiquidityGauge.claimable_reward(A, address(lusdToken));
+            uint256 claimableLUSD = curveLiquidityGauge.claimable_reward(A, address(beanToken));
             assertRelativeError(claimableLUSD, generatedLUSDReward / 7, 1000);
 
             uint256 lusdReceived = claimRewards();
@@ -85,7 +85,7 @@ contract ChickenBondManagerMainnetGaugeTest is BaseTest, MainnetTestSetup {
 
             curveLiquidityGauge.deposit(lp);
             vm.warp(block.timestamp + 1 days);
-            uint256 claimableLUSD = curveLiquidityGauge.claimable_reward(A, address(lusdToken));
+            uint256 claimableLUSD = curveLiquidityGauge.claimable_reward(A, address(beanToken));
             assertRelativeError(claimableLUSD, generatedLUSDReward1 / 7, 1000);
         }
         vm.stopPrank();
@@ -99,7 +99,7 @@ contract ChickenBondManagerMainnetGaugeTest is BaseTest, MainnetTestSetup {
         {
             // Verify that it continues to hand out rewards
             vm.warp(block.timestamp + 1 days);
-            uint256 claimableLUSD1 = curveLiquidityGauge.claimable_reward(A, address(lusdToken));
+            uint256 claimableLUSD1 = curveLiquidityGauge.claimable_reward(A, address(beanToken));
             assertRelativeError(claimableLUSD1, generatedLUSDReward1 * 2 / 7, 1000);
 
             // Generate more rewards
@@ -107,7 +107,7 @@ contract ChickenBondManagerMainnetGaugeTest is BaseTest, MainnetTestSetup {
 
             // Verify that the newly generated rewards are also handed out
             vm.warp(block.timestamp + 1 days);
-            uint256 claimableLUSD2 = curveLiquidityGauge.claimable_reward(A, address(lusdToken));
+            uint256 claimableLUSD2 = curveLiquidityGauge.claimable_reward(A, address(beanToken));
             uint256 remainingLUSD = generatedLUSDReward1 - claimableLUSD1 + generatedLUSDReward2;
             assertRelativeError(claimableLUSD2, claimableLUSD1 + remainingLUSD / 7, 1000);
 
@@ -129,7 +129,7 @@ contract ChickenBondManagerMainnetGaugeTest is BaseTest, MainnetTestSetup {
             // Stake for 1 day
             curveLiquidityGauge.deposit(lp);
             vm.warp(block.timestamp + 1 days);
-            uint256 claimableLUSD = curveLiquidityGauge.claimable_reward(A, address(lusdToken));
+            uint256 claimableLUSD = curveLiquidityGauge.claimable_reward(A, address(beanToken));
             assertRelativeError(claimableLUSD, generatedLUSDReward / 7, 1000);
 
             // Stop staking
@@ -138,7 +138,7 @@ contract ChickenBondManagerMainnetGaugeTest is BaseTest, MainnetTestSetup {
 
             // Claimable LUSD is still the same
             vm.warp(block.timestamp + 1 days);
-            claimableLUSD = curveLiquidityGauge.claimable_reward(A, address(lusdToken));
+            claimableLUSD = curveLiquidityGauge.claimable_reward(A, address(beanToken));
             assertRelativeError(claimableLUSD, generatedLUSDReward / 7, 1000);
 
             // Verify that rewards can still be claimed
@@ -161,7 +161,7 @@ contract ChickenBondManagerMainnetGaugeTest is BaseTest, MainnetTestSetup {
             // Stake for enough time for all rewards to run out
             curveLiquidityGauge.deposit(lp);
             vm.warp(block.timestamp + 10 days);
-            uint256 claimableLUSD = curveLiquidityGauge.claimable_reward(A, address(lusdToken));
+            uint256 claimableLUSD = curveLiquidityGauge.claimable_reward(A, address(beanToken));
 
             // Only 6.5/7ths of the generated reward is claimable,
             // half a day's worth of rewards were lost
@@ -183,7 +183,7 @@ contract ChickenBondManagerMainnetGaugeTest is BaseTest, MainnetTestSetup {
             // Stake for 1 day
             curveLiquidityGauge.deposit(lp);
             vm.warp(block.timestamp + 1 days);
-            uint256 claimableLUSD = curveLiquidityGauge.claimable_reward(A, address(lusdToken));
+            uint256 claimableLUSD = curveLiquidityGauge.claimable_reward(A, address(beanToken));
             assertRelativeError(claimableLUSD, generatedLUSDReward / 7, 1000);
 
             // Withdraw and send all LP to second user
@@ -205,8 +205,8 @@ contract ChickenBondManagerMainnetGaugeTest is BaseTest, MainnetTestSetup {
         }
         vm.stopPrank();
 
-        uint256 claimableLUSD_A = curveLiquidityGauge.claimable_reward(A, address(lusdToken));
-        uint256 claimableLUSD_B = curveLiquidityGauge.claimable_reward(B, address(lusdToken));
+        uint256 claimableLUSD_A = curveLiquidityGauge.claimable_reward(A, address(beanToken));
+        uint256 claimableLUSD_B = curveLiquidityGauge.claimable_reward(B, address(beanToken));
 
         // A has only earned 1/7th of the total generated LUSD reward and B is earning nothing.
         // 6/7ths of the reward was lost.

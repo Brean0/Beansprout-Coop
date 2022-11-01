@@ -92,7 +92,7 @@ contract ChickenBondManagerMainnetMigrationTest is BaseTest, MainnetTestSetup {
         uint A_bondID = createBondForUser(A, bondAmount);
         uint B_bondID = createBondForUser(B, bondAmount);
         uint C_bondID = createBondForUser(C, bondAmount);
-        deal(address(lusdToken), D, 1e24);
+        deal(address(beanToken), D, 1e24);
         uint D_bondID = createBondForUser(D, bondAmount);
 
         vm.warp(block.timestamp + 30 days);
@@ -212,30 +212,30 @@ contract ChickenBondManagerMainnetMigrationTest is BaseTest, MainnetTestSetup {
         assertGt(polSP, 0, "pol in SP != 0");
         assertApproximatelyEqual(pendingLUSDInSP + acquiredLUSDInSP, rawBalSP, rawBalSP / 1e9, "B.Protocol bal != pending + acquired before redeems");  // Within 1e-9 relative error
 
-        assertGt(bLUSDToken.totalSupply(), 0);
+        assertGt(bBEANToken.totalSupply(), 0);
 
         // bootstrap period passes
         vm.warp(block.timestamp + BOOTSTRAP_PERIOD_REDEEM);
 
         // B transfers 50% of his bLUSD to C, and redeems
         vm.startPrank(B);
-        bLUSDToken.transfer(C, bLUSDToken.balanceOf(B) / 2);
-        chickenBondManager.redeem(bLUSDToken.balanceOf(B), 0);
+        bBEANToken.transfer(C, bBEANToken.balanceOf(B) / 2);
+        chickenBondManager.redeem(bBEANToken.balanceOf(B), 0);
         vm.stopPrank();
 
         // A redeems
         vm.startPrank(A);
-        chickenBondManager.redeem(bLUSDToken.balanceOf(A), 0);
+        chickenBondManager.redeem(bBEANToken.balanceOf(A), 0);
         vm.stopPrank();
 
         // Final bLUSD holder C redeems
         vm.startPrank(C);
-        chickenBondManager.redeem(bLUSDToken.balanceOf(C), 0);
+        chickenBondManager.redeem(bBEANToken.balanceOf(C), 0);
         vm.stopPrank();
-        assertEq(bLUSDToken.balanceOf(C), 0, "C bLUSD !=0 after full redeem");
+        assertEq(bBEANToken.balanceOf(C), 0, "C bLUSD !=0 after full redeem");
 
         // Check all bLUSD has been burned
-        assertEq(bLUSDToken.totalSupply(), 0, "bLUSD supply != 0 after full redeem");
+        assertEq(bBEANToken.totalSupply(), 0, "bLUSD supply != 0 after full redeem");
 
         polSP = chickenBondManager.getOwnedLUSDInSP();
         assertEq(polSP, 0,"polSP !=0 after full redeem");
@@ -254,7 +254,7 @@ contract ChickenBondManagerMainnetMigrationTest is BaseTest, MainnetTestSetup {
         // Check only pending LUSD remains in the SP
         pendingLUSDInSP = chickenBondManager.getPendingLUSD();
         assertGt(pendingLUSDInSP, 0, "pending !> 0 after full redeem");
-        rawBalSP = lusdToken.balanceOf(address(bammSPVault));
+        rawBalSP = beanToken.balanceOf(address(bammSPVault));
         assertEq(rawBalSP, 0, "B.AMM LUSD balance should be zero");
         uint256 lusdInBAMMSPVault = chickenBondManager.getLUSDInBAMMSPVault();
         assertEq(pendingLUSDInSP, lusdInBAMMSPVault, "SP bal != pending after full redemption");
@@ -279,10 +279,10 @@ contract ChickenBondManagerMainnetMigrationTest is BaseTest, MainnetTestSetup {
         chickenBondManager.activateMigration();
         vm.stopPrank();
 
-        deal(address(lusdToken), D, bondAmount);
+        deal(address(beanToken), D, bondAmount);
 
         vm.startPrank(D);
-        lusdToken.approve(address(chickenBondManager), bondAmount);
+        beanToken.approve(address(chickenBondManager), bondAmount);
 
         vm.expectRevert("CBM: Migration must be not be active");
         chickenBondManager.createBond(bondAmount);
@@ -501,14 +501,14 @@ contract ChickenBondManagerMainnetMigrationTest is BaseTest, MainnetTestSetup {
         vm.stopPrank();
 
         // Get C LUSD balance
-        uint256 C_lusdBalBeforeCI = lusdToken.balanceOf(C);
+        uint256 C_lusdBalBeforeCI = beanToken.balanceOf(C);
 
         vm.warp(block.timestamp + 10 days);
         // C chickens in
         chickenInForUser(C, C_bondID);
 
         // Check C LUSD balance increases
-        uint256 C_lusdBalAfterCI = lusdToken.balanceOf(C);
+        uint256 C_lusdBalAfterCI = beanToken.balanceOf(C);
         assertGt(C_lusdBalAfterCI, C_lusdBalBeforeCI);
     }
 
@@ -542,7 +542,7 @@ contract ChickenBondManagerMainnetMigrationTest is BaseTest, MainnetTestSetup {
 
         // Get SP LUSD balance and buckets
         uint pendingLUSDInSP1 = chickenBondManager.getPendingLUSD();
-        uint SPBal1 = lusdToken.balanceOf(address(bammSPVault));
+        uint SPBal1 = beanToken.balanceOf(address(bammSPVault));
         uint256 lusdInBAMMSPVault1 = chickenBondManager.getLUSDInBAMMSPVault();
 
         vm.warp(block.timestamp + 10 days);
@@ -551,7 +551,7 @@ contract ChickenBondManagerMainnetMigrationTest is BaseTest, MainnetTestSetup {
 
         // Get SP LUSD balance and buckets
         uint pendingLUSDInSP2 = chickenBondManager.getPendingLUSD();
-        uint SPBal2 = lusdToken.balanceOf(address(bammSPVault));
+        uint SPBal2 = beanToken.balanceOf(address(bammSPVault));
         uint256 lusdInBAMMSPVault2 = chickenBondManager.getLUSDInBAMMSPVault();
 
         // Check pending bucket and balance decreased
@@ -592,7 +592,7 @@ contract ChickenBondManagerMainnetMigrationTest is BaseTest, MainnetTestSetup {
         vm.stopPrank();
 
         // Get rewards staking contract LUSD balance before
-        uint256 lusdBalanceStakingBeforeCI = lusdToken.balanceOf(address(curveLiquidityGauge));
+        uint256 lusdBalanceStakingBeforeCI = beanToken.balanceOf(address(curveLiquidityGauge));
         assertGt(lusdBalanceStakingBeforeCI, 0); // should be > 0 from previous CIs in normal mode
 
         vm.warp(block.timestamp + 10 days);
@@ -600,7 +600,7 @@ contract ChickenBondManagerMainnetMigrationTest is BaseTest, MainnetTestSetup {
         chickenInForUser(C, C_bondID);
 
         // Check rewards staking contract lusd balance is the same
-        uint256 lusdBalanceStakingAfterCI = lusdToken.balanceOf(address(curveLiquidityGauge));
+        uint256 lusdBalanceStakingAfterCI = beanToken.balanceOf(address(curveLiquidityGauge));
         assertEq(lusdBalanceStakingAfterCI,lusdBalanceStakingBeforeCI);
     }
 
@@ -634,7 +634,7 @@ contract ChickenBondManagerMainnetMigrationTest is BaseTest, MainnetTestSetup {
 
         // Get pending and total LUSD in SP before
         uint256 pendingLUSDBeforeCO = chickenBondManager.getPendingLUSD();
-        uint256 spBalanceBeforeCO = lusdToken.balanceOf(address(bammSPVault));
+        uint256 spBalanceBeforeCO = beanToken.balanceOf(address(bammSPVault));
         uint256 lusdInBAMMSPVaultBeforeCO = chickenBondManager.getLUSDInBAMMSPVault();
 
         assertGt(pendingLUSDBeforeCO, 0);
@@ -648,7 +648,7 @@ contract ChickenBondManagerMainnetMigrationTest is BaseTest, MainnetTestSetup {
         vm.stopPrank();
 
         uint256 pendingLUSDAfterCO = chickenBondManager.getPendingLUSD();
-        uint256 spBalanceAfterCO = lusdToken.balanceOf(address(bammSPVault));
+        uint256 spBalanceAfterCO = beanToken.balanceOf(address(bammSPVault));
         uint256 lusdInBAMMSPVaultAfterCO = chickenBondManager.getLUSDInBAMMSPVault();
 
         // Check pending LUSD deceased

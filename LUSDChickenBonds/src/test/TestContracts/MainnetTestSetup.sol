@@ -44,13 +44,13 @@ contract MainnetTestSetup is BaseTest {
 
     function setUp() public {
         // pinBlock(MAINNET_PINNED_BLOCK);
+        vm.makePersistent(0x0000000000000000000000000000000000000000);
         pinBlock(block.timestamp);
-
         accounts = new Accounts();
         createAccounts();
 
         // Grab deployed mainnet LUSDToken
-        lusdToken = IERC20Permit(MAINNET_LUSD_TOKEN_ADDRESS);
+        beanToken = IERC20Permit(MAINNET_LUSD_TOKEN_ADDRESS);
 
         _3crvToken = IERC20(MAINNET_3CRV_TOKEN_ADDRESS);
 
@@ -58,16 +58,16 @@ contract MainnetTestSetup is BaseTest {
         curveGaugeManagerAddress = accountsList[8];
 
         // Give some LUSD to test accounts
-        deal(address(lusdToken), A, 1e24);
-        deal(address(lusdToken), B, 1e24);
-        deal(address(lusdToken), C, 1e24);
-        deal(address(lusdToken), D, 1e24);
+        deal(address(beanToken), A, 1e24);
+        deal(address(beanToken), B, 1e24);
+        deal(address(beanToken), C, 1e24);
+        deal(address(beanToken), D, 1e24);
 
         // Check accounts are funded
-        assertTrue(lusdToken.balanceOf(A) == 1e24);
-        assertTrue(lusdToken.balanceOf(B) == 1e24);
-        assertTrue(lusdToken.balanceOf(C) == 1e24);
-        assertTrue(lusdToken.balanceOf(D) == 1e24);
+        assertTrue(beanToken.balanceOf(A) == 1e24);
+        assertTrue(beanToken.balanceOf(B) == 1e24);
+        assertTrue(beanToken.balanceOf(C) == 1e24);
+        assertTrue(beanToken.balanceOf(D) == 1e24);
 
         bammSPVault = IBAMM(
             deployCode(
@@ -97,7 +97,7 @@ contract MainnetTestSetup is BaseTest {
         liquitySPAddress = MAINNET_LIQUITY_SP_ADDRESS;
 
         // Deploy core ChickenBonds system
-        bLUSDToken = new BLUSDToken("bLUSDToken", "BLUSD");
+        bBEANToken = new BLUSDToken("bBEANToken", "BLUSD");
 
         BondNFT.LiquityDataAddresses memory liquityDataAddresses = BondNFT.LiquityDataAddresses({
             troveManagerAddress: MAINNET_LIQUITY_TROVE_MANAGER_ADDRESS,
@@ -120,7 +120,7 @@ contract MainnetTestSetup is BaseTest {
 
         // Deploy LUSD/bLUSD AMM Curve V2 pool and LiquidityGauge V4
         ICurveCryptoFactory curveFactory = ICurveCryptoFactory(MAINNET_CURVE_V2_FACTORY_ADDRESS);
-        address[2] memory bLUSDCurvePoolCoins = [address(bLUSDToken), address(lusdToken)];
+        address[2] memory bLUSDCurvePoolCoins = [address(bBEANToken), address(beanToken)];
 
         bLUSDCurvePool = ICurveCryptoPool(
             curveFactory.deploy_pool(
@@ -147,8 +147,8 @@ contract MainnetTestSetup is BaseTest {
 
         ChickenBondManager.ExternalAdresses memory externalContractAddresses = ChickenBondManager.ExternalAdresses({
             bondNFTAddress: address(bondNFT),
-            lusdTokenAddress: address(lusdToken),
-            bLUSDTokenAddress: address(bLUSDToken),
+            lusdTokenAddress: address(beanToken),
+            bLUSDTokenAddress: address(bBEANToken),
             curvePoolAddress: address(curvePool),
             curveBasePoolAddress: address(curveBasePool),
             bammSPVaultAddress: address(bammSPVault),
@@ -196,23 +196,23 @@ contract MainnetTestSetup is BaseTest {
 
         // Add LUSD as reward token for Curve Liquidity Gauge, and set ChickenBondManager as distributor
         vm.startPrank(curveGaugeManagerAddress);
-        curveGaugeManagerProxy.add_reward(curveLiquidityGaugeAddress, address(lusdToken), address(chickenBondManager));
+        curveGaugeManagerProxy.add_reward(curveLiquidityGaugeAddress, address(beanToken), address(chickenBondManager));
         vm.stopPrank();
 
         bondNFT.setAddresses(address(chickenBondManager));
-        bLUSDToken.setAddresses(address(chickenBondManager));
+        bBEANToken.setAddresses(address(chickenBondManager));
         bammSPVault.setChicken(address(chickenBondManager));
 
         // Log some current blockchain state
         console.log(block.timestamp, "block.timestamp");
         console.log(block.number, "block.number");
-        console.log(lusdToken.totalSupply(), "Total LUSD supply");
-        console.log(address(lusdToken), "LUSDToken address");
+        console.log(beanToken.totalSupply(), "Total LUSD supply");
+        console.log(address(beanToken), "LUSDToken address");
         console.log(address(bammSPVault), "B.Protocol LUSD vault address");
         console.log(address(yearnCurveVault), "Yearn Curve vault address");
         console.log(address(curvePool), "Curve pool address");
         console.log(address(chickenBondManager), "ChickenBondManager address");
-        console.log(address(bLUSDToken), "bLUSDToken address");
+        console.log(address(bBEANToken), "bBEANToken address");
         console.log(address(bondNFT), "BondNFT address");
         console.log(address(bLUSDCurvePool), "Curve bLUSD/LUSD pool address");
         console.log(curveLiquidityGaugeAddress, "Curve Liquidity Gauge address");

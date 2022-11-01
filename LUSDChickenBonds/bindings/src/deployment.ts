@@ -160,8 +160,8 @@ class LUSDChickenBondDeployment {
       overrides
     );
 
-    const lusdToken = await this.deployContract(
-      factories.lusdToken,
+    const beanToken = await this.deployContract(
+      factories.beanToken,
       "LUSD Stablecoin",
       "LUSD",
       params.lusdFaucetTapAmount,
@@ -173,7 +173,7 @@ class LUSDChickenBondDeployment {
       factories.curvePool,
       "LUSD-3CRV Pool",
       "LUSD3CRV-f",
-      lusdToken.contract.address,
+      beanToken.contract.address,
       overrides
     );
 
@@ -181,7 +181,7 @@ class LUSDChickenBondDeployment {
 
     const bammSPVault = await this.deployContract(
       factories.bammSPVault,
-      lusdToken.contract.address,
+      beanToken.contract.address,
       overrides
     );
 
@@ -200,9 +200,9 @@ class LUSDChickenBondDeployment {
       overrides
     );
 
-    const bLUSDToken = await this.deployContract(
-      factories.bLUSDToken,
-      "bLUSDToken",
+    const bBEANToken = await this.deployContract(
+      factories.bBEANToken,
+      "bBEANToken",
       "BLUSD",
       overrides
     );
@@ -289,8 +289,8 @@ class LUSDChickenBondDeployment {
     );
 
     const bLUSDCurvePoolCoins: [string, string] = [
-      bLUSDToken.contract.address,
-      lusdToken.contract.address
+      bBEANToken.contract.address,
+      beanToken.contract.address
     ];
 
     const bLUSDCurveToken = await this.deployContractViaFactoryContract(
@@ -340,9 +340,9 @@ class LUSDChickenBondDeployment {
         bondNFTAddress: bondNFT.contract.address,
         curvePoolAddress: curvePool.contract.address,
         curveBasePoolAddress: curveBasePool.contract.address,
-        lusdTokenAddress: lusdToken.contract.address,
+        lusdTokenAddress: beanToken.contract.address,
         curveLiquidityGaugeAddress: curveLiquidityGauge.contract.address,
-        bLUSDTokenAddress: bLUSDToken.contract.address,
+        bLUSDTokenAddress: bBEANToken.contract.address,
         yearnCurveVaultAddress: yearnCurveVault.contract.address,
         yearnGovernanceAddress,
         bammSPVaultAddress: bammSPVault.contract.address,
@@ -373,8 +373,8 @@ class LUSDChickenBondDeployment {
     const underlingPrototype = await this.deployContract(
       factories.underlingPrototype,
       chickenBondManager.contract.address,
-      lusdToken.contract.address,
-      bLUSDToken.contract.address,
+      beanToken.contract.address,
+      bBEANToken.contract.address,
       bLUSDCurvePoolAddress,
       overrides
     );
@@ -394,8 +394,8 @@ class LUSDChickenBondDeployment {
         ],
         underlingPrototype: underlingPrototype.contract.address,
         curvePoolAddress: curvePool.contract.address,
-        lusdTokenAddress: lusdToken.contract.address,
-        bLUSDTokenAddress: bLUSDToken.contract.address,
+        lusdTokenAddress: beanToken.contract.address,
+        bLUSDTokenAddress: bBEANToken.contract.address,
         chickenBondManagerAddress: chickenBondManager.contract.address,
         bondNFTAddress: bondNFT.contract.address,
         bLUSDCurvePoolAddress: bLUSDCurvePoolAddress
@@ -404,7 +404,7 @@ class LUSDChickenBondDeployment {
     );
 
     return {
-      lusdToken,
+      beanToken,
       curvePool,
       curveBasePool,
       bondNFT,
@@ -419,7 +419,7 @@ class LUSDChickenBondDeployment {
       chickenInArtwork,
       bondNFTArtworkSwitcherTester,
       chickenBondManager,
-      bLUSDToken,
+      bBEANToken,
       bLUSDCurveToken,
       bLUSDCurvePool,
       curveLiquidityGauge,
@@ -452,7 +452,7 @@ class LUSDChickenBondDeployment {
         ),
 
       () =>
-        deployed.bLUSDToken.contract.setAddresses(
+        deployed.bBEANToken.contract.setAddresses(
           deployed.chickenBondManager.contract.address,
           overrides
         ),
@@ -470,7 +470,7 @@ class LUSDChickenBondDeployment {
         ),
 
       () =>
-        deployed.lusdToken.contract.transferOwnership(
+        deployed.beanToken.contract.transferOwnership(
           deployed.prankster.contract.address,
           overrides
         ),

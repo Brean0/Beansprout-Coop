@@ -1,6 +1,6 @@
 {
   "addresses": {
-    "lusdToken": "0xbEB0f57E13f89ad08F06FEa44d8eA2e74F838Fe6",
+    "beanToken": "0xbEB0f57E13f89ad08F06FEa44d8eA2e74F838Fe6",
     "curvePool": "0x85ea6C4e3C1d1425e8215B6988e9798BB6a0B526",
     "curveBasePool": "0xA7a4c4c910A0BA448ba07ac0Ec536F0A91C704A7",
     "bondNFT": "0x9EA0880F71908fb639C89a76E9A4E2741Dd2Ef5e",
@@ -15,7 +15,7 @@
     "chickenInArtwork": "",
     "bondNFTArtworkSwitcherTester": "",
     "chickenBondManager": "0x0C9a65160ee1092b56D5B6C18512282dB9458A11",
-    "bLUSDToken": "0xde3d06fb2cbf2dd114f245693dB7414f58be96fF",
+    "bBEANToken": "0xde3d06fb2cbf2dd114f245693dB7414f58be96fF",
     "bLUSDCurveToken": "0x11C11dD77bc1756A4f4288Ec4ce2A3Cb6041e345",
     "bLUSDCurvePool": "0x70e2d08D7A384441556be80B3885E40458e3632D",
     "curveLiquidityGauge": "0x2b6bC62eC1315D15372F6AEc667A2CD7fC8c3c0A",
