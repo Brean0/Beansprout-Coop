@@ -27,6 +27,8 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
     /// done check interfaces for IBLUSD and ILUSD -> Convert to IBBEAN, IBEAN
     IBBEANToken immutable public bBEANToken;
     IBEANToken immutable public beanToken; 
+    IBEANToken immutable public bean3CRVToken; 
+
 
     // TODO: remove bammSPVault,yearnCurveVault,yearnRegistry with beanstalk address (Yield gained there)
     // External contracts and addresses
@@ -48,9 +50,15 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
     uint256 immutable public CHICKEN_IN_AMM_FEE;
 
     // TODO: REMOVE bammLUSDDebt,yTokensHeldByCBM not needed
-    uint256 private pendingBEAN;          // Total pending BEAN. Deposited in the silo. 
-    uint256 private permanentBEAN;        // Total permanent BEAN owned by the protocol. deposited in the silo as BEAN or BEAN-3CRV
-    uint256 private reserveBEAN;          // Total reserve BEAN. Deposited in the silo.
+    uint256 public pendingBEAN;          // Total pending BEAN. Deposited in the silo.
+    uint256 public pendingBEAN3CRV;      // Total pending BEAN3CRV. Deposited in the silo.
+
+    uint256 public permanentBEAN;        // Total permanent BEAN owned by the protocol. deposited in the silo as BEAN or BEAN-3CRV
+    uint256 public permanentBEAN3CRV;        // Total permanent BEAN owned by the protocol. deposited in the silo as BEAN or BEAN-3CRV
+
+    uint256 public reserveBEAN;          // Total reserve BEAN. Deposited in the silo.
+    uint256 public reserveBEAN3CRV;          // Total reserve BEAN. Deposited in the silo.
+
     uint256 private bammLUSDDebt;         // Amount “owed” by B.Protocol to ChickenBonds, equals deposits - withdrawals + rewards
     uint256 public yTokensHeldByCBM;      // Computed balance of Y-tokens of LUSD-3CRV vault owned by this contract
                                           // (to prevent certain attacks where attacker increases the balance and thus the backing ratio)
@@ -98,6 +106,13 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         uint64 startTime;
         uint64 endTime; // Timestamp of chicken in/out event
         BondStatus status;
+        uint32 season;
+        TokenType token;
+    }
+
+    enum TokenType {
+        BEAN,
+        BEAN3CRV
     }
 
     uint256 public firstChickenInTime; // Timestamp of the first chicken in after bLUSD supply is zero
@@ -156,8 +171,8 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
     uint256 constant CURVE_FEE_DENOMINATOR = 1e10;
 
     // Thresholds of SP <=> Curve shifting
-    uint256 public immutable curveDepositLUSD3CRVExchangeRateThreshold;
-    uint256 public immutable curveWithdrawal3CRVLUSDExchangeRateThreshold;
+    uint256 public immutable curveDepositBEAN3CRVExchangeRateThreshold;
+    uint256 public immutable curveWithdrawalBEAN3CRVExchangeRateThreshold;
 
     // Timestamp at which the last shifter countdown started
     uint256 public lastShifterCountdownStartTime;
@@ -192,7 +207,7 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
 
     event BaseRedemptionRateUpdated(uint256 _baseRedemptionRate);
     event LastRedemptionTimeUpdated(uint256 _lastRedemptionFeeOpTime);
-    event BondCreated(address indexed bonder, uint256 bondId, uint256 amount, uint80 bondInitialHalfDna);
+    event BondCreated(address indexed bonder, uint256 bondId,uint8 Token, uint256 amount, uint80 bondInitialHalfDna);
     event BondClaimed(
         address indexed bonder,
         uint256 bondId,
@@ -203,7 +218,7 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         bool migration,
         uint80 bondFinalHalfDna
     );
-    event BondCancelled(address indexed bonder, uint256 bondId, uint256 principalLusdAmount, uint256 minLusdAmount, uint256 withdrawnLusdAmount, uint80 bondFinalHalfDna);
+    event BondCancelled(address indexed bonder, uint256 bondId, uint256 withdrawnLusdAmount, uint80 bondFinalHalfDna);
     event BBEANRedeemed(address indexed redeemer, uint256 bLusdAmount, uint256 minLusdAmount, uint256 beanAmount, uint256 yTokens, uint256 redemptionFee);
     event MigrationTriggered(uint256 previousPermanentLUSD);
     event AccrualParameterUpdated(uint256 accrualParameter);
@@ -244,9 +259,9 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         // For convenience, we want to parameterize our thresholds in terms of the spot prices -dy/dx & -dx/dy,
         // which are not exposed by Curve directly. Instead, we turn our thresholds into thresholds on the exchange rate
         // by taking into account the fee.
-        curveDepositLUSD3CRVExchangeRateThreshold =
+        curveDepositBEAN3CRVExchangeRateThreshold =
             _params.curveDepositDydxThreshold * (CURVE_FEE_DENOMINATOR - fee) / CURVE_FEE_DENOMINATOR;
-        curveWithdrawal3CRVLUSDExchangeRateThreshold =
+        curveWithdrawalBEAN3CRVExchangeRateThreshold =
             _params.curveWithdrawalDxdyThreshold * (CURVE_FEE_DENOMINATOR - fee) / CURVE_FEE_DENOMINATOR;
 
         BOOTSTRAP_PERIOD_CHICKEN_IN = _params.bootstrapPeriodChickenIn;
@@ -263,10 +278,13 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
 
         // TODO: Decide between one-time infinite LUSD approval to Yearn and Curve (lower gas cost per user tx, less secure
         // or limited approval at each bonder action (higher gas cost per user tx, more secure)
-        beanToken.approve(address(bammSPVault), MAX_UINT256); // not needed
+        //beanToken.approve(address(bammSPVault), MAX_UINT256); // not needed
         beanToken.approve(address(curvePool), MAX_UINT256); 
-        curvePool.approve(address(yearnCurveVault), MAX_UINT256); // not needed, replace with beanstalk
+        //curvePool.approve(address(yearnCurveVault), MAX_UINT256); // not needed, replace with beanstalk
         beanToken.approve(address(curveLiquidityGauge), MAX_UINT256);
+        beanToken.approve(address(beanstalk), MAX_UINT256);
+        bean3CRVToken.approve(address(beanstalk), MAX_UINT256);
+
 
         // Check that the system is hooked up to the correct latest Yearn vault
         assert(address(yearnCurveVault) == yearnRegistry.latestVault(address(curvePool))); // not needed, replace with beanstalk
@@ -279,9 +297,8 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
     // 2: CreateBondCrates, that takes in multiple crates (i.e multiple season deposits)
     // - the above will need an array of amounts + an array of crates that match that 
     // - pls no mix and match crates from BEAN/BEAN3CRV
-    function createBond(uint256 _beanAmount, From fromMode) public returns (uint256) {
+    function createBondExternal(TokenType token, uint256 _beanAmount) public returns (uint256) {
         // TODO: Allow user to deposit BEAN or BEAN3CRV
-        // if BEAN3CRV, do calculation to find BDV
         _requireMinBond(_beanAmount);
         _requireMigrationNotActive();
 
@@ -293,42 +310,45 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         //Record the user’s bond data: bond_amount and start_time
         // TODO: need to add an array of crates that the user can deposit in 
         // TODO: _beanAmount will also need to be an array if there are multiple crates
+        
         BondData memory bondData;
         bondData.beanAmount = _beanAmount;
         bondData.startTime = uint64(block.timestamp);
         bondData.status = BondStatus.active;
+        bondData.season = beanstalk.season();
+        bondData.token = token;
         idToBondData[bondID] = bondData;
 
-        pendingBEAN += _beanAmount;
+        if (token == BEAN) pendingBEAN += _beanAmount;
+        if (token == BEAN3CRV) pendingBEAN3CRV += _beanAmount;
+
         totalWeightedStartTimes += _beanAmount * block.timestamp;
         
         // TODO update to transfer BEAN or BEAN3CRV
-        // Check also whether if deposit is in silo (INTERNAL), and transfer from there instead
-        // bytes[2] memory farmBytes; 
-        // farm0 = abi.encodeCall(
-        //     transferFrom(address, uint256, uint8, uint8), 
-        //     (address(this),_beanAmount, EXTERNAL, INTERNAL)
-        // );
-        // farm1 = abi.encodeCall(
-        //     deposit(address, uint256, uint8), 
-        //     (address(beanToken), _beanAmount, INTERNAL)
-        // );
-        // farmBytes.push(farm0);
-        // farmBytes.push(farm1);
-        // beanstalk.farm(farmBytes);
 
         // transfer bean to manager, then deposit
-        beanstalk.transferToken(beanToken, address(this), _beanAmount, EXTERNAL, INTERNAL);
+        if (token == BEAN) {
+            beanstalk.transferToken(beanToken, address(this), _beanAmount, EXTERNAL, INTERNAL);
+            beanstalk.deposit(address(beanToken), _beanAmount, INTERNAL);
+        }
 
-        beanstalk.deposit(address(beanToken), _beanAmount, INTERNAL);
-        
+        if (token == BEAN3CRV) {
+            beanstalk.transferToken(bean3CRVToken, address(this), _beanAmount, EXTERNAL, INTERNAL);
+            beanstalk.deposit(address(bean3CRVToken), _beanAmount, INTERNAL);
+        }        
 
         // Deposit the LUSD to the B.Protocol LUSD vault
         // _depositToBAMM(_beanAmount);
         // TODO: change _beanAmount to  BDV 
-        emit BondCreated(msg.sender, bondID, _beanAmount, initialHalfDna);
+        emit BondCreated(msg.sender, bondID, token, _beanAmount, initialHalfDna);
 
         return bondID;
+    }
+
+    function createBondInternal(TokenType token, uint256 _beanAmount) public returns (uint256) {
+    }
+
+    function createBondInternalCrates(TokenType token, uint256 _beanAmount) public returns (uint256) {
     }
 
     function createBondWithPermit(
@@ -344,7 +364,7 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         if (beanToken.allowance(owner, address(this)) < amount) {
             beanToken.permit(owner, address(this), amount, deadline, v, r, s);
         }
-        return createBond(amount);
+        return createBondExternal(amount);
     }
 
     function chickenOut(uint256 _bondID, uint256 _minLUSD) external {
@@ -366,23 +386,9 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         pendingBEAN -= bond.beanAmount;
         totalWeightedStartTimes -= bond.beanAmount * bond.startTime;
 
-        /* In practice, there could be edge cases where the pendingBEAN is not fully backed:
-        * - Heavy liquidations, and before yield has been converted
-        * - Heavy loss-making liquidations, i.e. at <100% CR
-        * - SP or B.Protocol vault hack that drains LUSD
-        *
-        * The user can decide how to handle chickenOuts if/when the recorded pendingBEAN is not fully backed by actual
-        * LUSD in B.Protocol / the SP, by adjusting _minLUSD */
-        // TODO: Beanstalk does not have this issue
-        //uint256 lusdToWithdraw = _requireEnoughLUSDInBAMM(bond.beanAmount, _minLUSD);
+        beanstalk.transferDeposit(address(this),msg.sender,bond.token,bond.season,bond.amount);
 
-        // Withdraw from B.Protocol LUSD vault
-        // TODO: Change to transferDeposit back to user, take account season of deposit
-        //_withdrawFromSilo(lusdToWithdraw, msg.sender);
-        // need to choose which season to withdraw from: 
-        beanstalk.transferDeposits(something);
-
-        emit BondCancelled(msg.sender, _bondID, bond.beanAmount, _minLUSD, lusdToWithdraw, newDna);
+        emit BondCancelled(msg.sender, _bondID, bond.beanAmount, newDna);
     }
 
     // transfer _lusdToTransfer to the LUSD/bLUSD AMM LP Rewards staking contract
@@ -481,8 +487,15 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
 
         // Subtract the bonded amount from the total pending LUSD (and implicitly increase the total acquired LUSD)
         pendingBEAN -= bond.beanAmount;
-        // bondAmountMinusChickenInFee = beanToAcquire + beanSurplus
-        reserveBEAN += beanToAcquire;
+
+        TokenType _token = bond.token;
+
+        if(TokenType == BEAN) {
+            reserveBEAN += beanToAcquire;
+        } else if (TokenType == BEAN3CRV) {
+            reserveBEAN3CRV += beanToAcquire;
+        }
+        
         totalWeightedStartTimes -= bond.beanAmount * bond.startTime;
 
         // Get the remaining surplus from the LUSD amount to acquire from the bond
@@ -492,19 +505,17 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         if (!migration) { // In normal mode, add the surplus to the permanent bucket by increasing the permament tracker. This implicitly decreases the acquired LUSD.
             permanentBEAN += beanSurplus;
         } else { // In migration mode, withdraw surplus from B.Protocol and refund to bonder
-            // TODO: COME BACK TO THIS
-            // TODO: should we allow to pass in a minimum value here too?
-            (,lusdInBAMMSPVault,) = bammSPVault.getLUSDValue();
-            uint256 lusdToRefund = Math.min(beanSurplus, lusdInBAMMSPVault);
-            if (lusdToRefund > 0) { _withdrawFromSilo(lusdToRefund, msg.sender); }
+            if (beanSurplus > 0) { beanstalk.transferDeposit(address(this),msg.sender,bond.token,bond.season,bond.amount); }
         }
 
         bBEANToken.mint(msg.sender, accruedBBEAN);
 
         // Transfer the chicken in fee to the LUSD/bLUSD AMM LP Rewards staking contract during normal mode.
-        if (!migration && lusdInBAMMSPVault >= chickenInFeeAmount) {
-            _withdrawFromSPVaultAndTransferToRewardsStakingContract(chickenInFeeAmount);
-            /// TODO: This requires us to withdraw, claim, then transfer the BEAN to the bean staking gauge
+        if (!migration) {
+            //_withdrawFromSPVaultAndTransferToRewardsStakingContract(chickenInFeeAmount);
+            // TODO: This requires us to withdraw, claim, then transfer the BEAN to the bean staking gauge
+            _queueWithdraw(chickenInFeeAmount);
+            
         }
 
         emit BondClaimed(msg.sender, _bondID, bond.beanAmount, accruedBBEAN, beanSurplus, chickenInFeeAmount, migration, newDna);
@@ -516,7 +527,7 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
 
         require(block.timestamp >= firstChickenInTime + BOOTSTRAP_PERIOD_REDEEM, "CBM: Redemption after first chicken in must wait until bootstrap period is over");
 
-        // TODO: change for beanstalk 
+        // TODO: not needed as reserve is only held in bean (for now)
         (
             uint256 acquiredLUSDInSP,
             uint256 acquiredLUSDInCurve,
@@ -528,44 +539,23 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         uint256 fractionOfBBEANToRedeem = _bBEANToRedeem * 1e18 / bBEANToken.totalSupply();
         
         // fuck redemption fees, what are we, grifters?
-        // Calculate redemption fee. No fee in migration mode.
         //uint256 redemptionFeePercentage = migration ? 0 : _updateRedemptionFeePercentage(fractionOfBBEANToRedeem);
         
-        // Will collect redemption fees from both buckets (in LUSD).
-        //uint256 redemptionFeeLUSD;
 
-        // TODO: only thinking of BEAN redemption in V1
-        // TODO: Both _requireEnoughLUSDInBAMM and _updateBAMMDebt call B.Protocol getLUSDValue, so it may be optmized
-        // Calculate the LUSD to withdraw from LUSD vault, withdraw and send to redeemer. Move the fee to the permanent bucket.
-        // uint256 lusdToWithdrawFromSP;
-        { // Block scoping to avoid stack too deep issues
-            uint256 acquiredLUSDInSPToRedeem = acquiredLUSDInSP * fractionOfBBEANToRedeem / 1e18;
-            // uint256 acquiredLUSDInSPToWithdraw = acquiredLUSDInSPToRedeem * (1e18 - redemptionFeePercentage) / 1e18;
-            // redemptionFeeLUSD += acquiredLUSDInSPToRedeem - acquiredLUSDInSPToWithdraw;
-            // TODO: can remove require logic as beanstalk will always have enough
-            // TODO: unless theres a hack ofc but if that happens we're fucked
-            // lusdToWithdrawFromSP = _requireEnoughLUSDInBAMM(acquiredLUSDInSPToWithdraw, _minLUSDFromBAMMSPVault);
-            // TODO: change withdraw to transfer deposits, and we choose the latest seasons that come from the chicken in
-            if (acquiredLUSDInSPToRedeem > 0) { _withdrawFromSilo(acquiredLUSDInSPToRedeem, msg.sender); }
-        }
-
-        // Send yTokens to the redeemer according to the proportion of owned LUSD in Curve that's being redeemed
-        // uint256 yTokensFromCurveVault;
-        // if (ownedLUSDInCurve > 0) {
-        //     uint256 acquiredLUSDInCurveToRedeem = acquiredLUSDInCurve * fractionOfBBEANToRedeem / 1e18;
-        //     uint256 lusdToWithdrawFromCurve = acquiredLUSDInCurveToRedeem * (1e18 - redemptionFeePercentage) / 1e18;
-        //     redemptionFeeLUSD += acquiredLUSDInCurveToRedeem - lusdToWithdrawFromCurve;
-        //     yTokensFromCurveVault = yTokensHeldByCBM * lusdToWithdrawFromCurve / ownedLUSDInCurve;
-        //     if (yTokensFromCurveVault > 0) { _transferFromCurve(msg.sender, yTokensFromCurveVault); }
-        // }
-
-        // Move the fee to permanent. This implicitly removes it from the acquired bucket
-        permanentBEAN = permanentLUSDCached + redemptionFeeLUSD;
 
         _requireNonZeroAmount(lusdToWithdrawFromSP + yTokensFromCurveVault);
 
         // Burn the redeemed bLUSD
         bBEANToken.burn(msg.sender, _bBEANToRedeem);
+
+        { // Block scoping to avoid stack too deep issues
+            // TODO: need to store season in which reserveBEAN + reserveBEAN3CRV is in 
+            uint256 reserveBEANToRedeem = reserveBEAN * fractionOfBBEANToRedeem / 1e18;
+            uint256 reserveBEAN3CRVToRedeem = reserveBEAN3CRV * fractionOfBBEANToRedeem / 1e18;
+
+            if (reserveBEANToRedeem > 0) beanstalk.transferDeposit(address(this), msg.sender, BEAN, bond.season, bond.amount);
+            if (reserveBEAN3CRVToRedeem > 0) beanstalk.transferDeposit(address(this), msg.sender, BEAN3CRV, bond.season, bond.amount);
+        }
 
         emit BBEANRedeemed(msg.sender, _bBEANToRedeem, _minLUSDFromBAMMSPVault, lusdToWithdrawFromSP, yTokensFromCurveVault, redemptionFeeLUSD);
 
@@ -574,128 +564,139 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
     
 
     // TODO: much of this logic can be put on the convert function already made
-    function shiftLUSDFromSPToCurve(uint256 _maxLUSDToShift) external {
+    // TODO: limit converts at minimum 1.0004, or 0.9996, due to fee.  
+    function convertPermBEANtoLP(uint256 _maxBEANToShift) external {
         _requireShiftBootstrapPeriodEnded();
         _requireMigrationNotActive();
         _requireNonZeroBLUSDSupply();
         _requireShiftWindowIsOpen();
 
         // TODO: Not needed for beanstalk I believe
-        (uint256 bammLUSDValue, uint256 lusdInBAMMSPVault) = _updateBAMMDebt();
-        uint256 lusdOwnedInBAMMSPVault = bammLUSDValue - pendingBEAN;
+        // (uint256 bammLUSDValue, uint256 lusdInBAMMSPVault) = _updateBAMMDebt();
+        // uint256 lusdOwnedInBAMMSPVault = bammLUSDValue - pendingBEAN;
 
-        uint256 totalLUSDInCurve = getTotalLUSDInCurve();
+        // uint256 totalLUSDInCurve = getTotalLUSDInCurve();
         // it can happen due to profits from shifts or rounding errors:
-        _requirePermanentGreaterThanCurve(totalLUSDInCurve);
+        // TODO: do we need?
+        //_requirePermanentGreaterThanCurve(permanentBEAN);
 
         // Make sure pending bucket is not moved to Curve, so it can be withdrawn on chicken out
         // TODO: for beanstalk, pending bucket can be moved to bean3CRV, as we redeem via BDV rather than amt
-        // BDV flucutates with BEAN3CRV (BDV is lower the higher BEAN3CRV is and vice versa)
-        // Need to take into consideration for redemptions 
-        // for example, if bean was a billion dollars, each BEAN3CRV would have a very small BDV, meaning using
-        // redemptions would heavily profit
-        // some solutions: treat 1BEAN3CRV = 1 BEAN
-        uint256 clampedLUSDToShift = Math.min(_maxLUSDToShift, lusdOwnedInBAMMSPVault);
+        
+        uint256 clampedBEANToShift = Math.min(_maxBEANToShift, permanentBEAN);
 
         // Make sure there’s enough LUSD available in B.Protocol
         // TODO: not needed
-        clampedLUSDToShift = Math.min(clampedLUSDToShift, lusdInBAMMSPVault);
+        //clampedBEANToShift = Math.min(clampedBEANToShift, lusdInBAMMSPVault);
 
         // Make sure we don’t make Curve bucket greater than Permanent one with the shift
         // subtraction is safe per _requirePermanentGreaterThanCurve above
-        clampedLUSDToShift = Math.min(clampedLUSDToShift, permanentBEAN - totalLUSDInCurve);
+        //clampedBEANToShift = Math.min(clampedBEANToShift, permanentBEAN - totalLUSDInCurve);
 
-        _requireNonZeroAmount(clampedLUSDToShift);
+        _requireNonZeroAmount(clampedBEANToShift);
 
         // Get the 3CRV virtual price only once, and use it for both initial and final check.
         // Adding LUSD liquidity to the meta-pool does not change 3CRV virtual price.
         uint256 _3crvVirtualPrice = curveBasePool.get_virtual_price();
-        uint256 initialExchangeRate = _getLUSD3CRVExchangeRate(_3crvVirtualPrice);
-
+        uint256 initialExchangeRate = _getBEAN3CRVExchangeRate(_3crvVirtualPrice);
+        
         require(
-            initialExchangeRate > curveDepositLUSD3CRVExchangeRateThreshold,
-            "CBM: LUSD:3CRV exchange rate must be over the deposit threshold before SP->Curve shift"
+            initialExchangeRate > curveDepositBEAN3CRVExchangeRateThreshold,
+            "CBM: BEAN:3CRV exchange rate must be over the deposit threshold before SP->Curve shift"
         );
 
         // Withdram LUSD from B.Protocol
-        // TODO: withdraw not needed, just need to call convert 
-        _withdrawFromSilo(clampedLUSDToShift, address(this));
+        // withdraw not needed, just need to call convert 
+        // _withdrawFromSilo(clampedBEANToShift, address(this));
 
         // Deposit the received LUSD to Curve in return for LUSD3CRV-f tokens
-        uint256 lusd3CRVBalanceBefore = curvePool.balanceOf(address(this));
+        //uint256 lusd3CRVBalanceBefore = curvePool.balanceOf(address(this));
         /* TODO: Determine if we should pass a minimum amount of LP tokens to receive here. Seems infeasible to determinine the mininum on-chain from
         * Curve spot price / quantities, which are manipulable. */
-        curvePool.add_liquidity([clampedLUSDToShift, 0], 0);
-        uint256 lusd3CRVBalanceDelta = curvePool.balanceOf(address(this)) - lusd3CRVBalanceBefore;
+        //curvePool.add_liquidity([clampedBEANToShift, 0], 0);
+        //uint256 lusd3CRVBalanceDelta = curvePool.balanceOf(address(this)) - lusd3CRVBalanceBefore;
 
         // Deposit the received LUSD3CRV-f to Yearn Curve vault
         // TODO: not needed 
-        _depositToCurve(lusd3CRVBalanceDelta);
+        //_depositToCurve(lusd3CRVBalanceDelta);
 
         // Do price check: ensure the SP->Curve shift has decreased the LUSD:3CRV exchange rate, but not into unprofitable territory
-        uint256 finalExchangeRate = _getLUSD3CRVExchangeRate(_3crvVirtualPrice);
-
-        require(
-            finalExchangeRate < initialExchangeRate &&
-            finalExchangeRate >= curveDepositLUSD3CRVExchangeRateThreshold,
-            "CBM: SP->Curve shift must decrease LUSD:3CRV exchange rate to a value above the deposit threshold"
-        );
+        // beanstalk does this for us
+        //uint256 finalExchangeRate = _getBEAN3CRVExchangeRate(_3crvVirtualPrice);
+        permanentBEAN -= fromAmount;
+        permanentBEAN3CRV += toAmount;
+        // beanstalk handles many errors, such as: 
+        // 1 - conversion would cause beanstalk to go under peg
+        
+        // TODO: Fix psuedocode
+        (toSeason,fromAmount,toAmount,fromBdv,toBdv) = beanstalk.convert(convertData,crates,amounts);
+        
     }
     // TODO: same comments as above
-    function shiftLUSDFromCurveToSP(uint256 _maxLUSDToShift) external {
+    // convert is allowed when beanstalk is above peg
+    function convertPermLPtoBEAN(uint256 _maxBEANLPToShift) external {
         _requireShiftBootstrapPeriodEnded();
         _requireMigrationNotActive();
         _requireNonZeroBLUSDSupply();
         _requireShiftWindowIsOpen();
 
         // We can’t shift more than what’s in Curve
-        uint256 ownedLUSDInCurve = getTotalLUSDInCurve();
-        uint256 clampedLUSDToShift = Math.min(_maxLUSDToShift, ownedLUSDInCurve);
-        _requireNonZeroAmount(clampedLUSDToShift);
+        // uint256 ownedLUSDInCurve = getTotalLUSDInCurve();
+        uint256 clampedBEANToShift = Math.min(_maxBEANLPToShift, permanentBEAN3CRV);
+        _requireNonZeroAmount(clampedBEANToShift);
 
         // Get the 3CRV virtual price only once, and use it for both initial and final check.
         // Removing LUSD liquidity from the meta-pool does not change 3CRV virtual price.
         uint256 _3crvVirtualPrice = curveBasePool.get_virtual_price();
-        uint256 initialExchangeRate = _get3CRVLUSDExchangeRate(_3crvVirtualPrice);
+        uint256 initialExchangeRate = _get3CRVBEANExchangeRate(_3crvVirtualPrice);
 
         // Here we're using the 3CRV:LUSD exchange rate (with 3CRV being valued at its virtual price),
         // which increases as LUSD price decreases, hence the direction of the inequality.
         require(
-            initialExchangeRate > curveWithdrawal3CRVLUSDExchangeRateThreshold,
-            "CBM: 3CRV:LUSD exchange rate must be above the withdrawal threshold before Curve->SP shift"
+            initialExchangeRate > curveWithdrawalBEAN3CRVExchangeRateThreshold,
+            "CBM: 3CRV:BEAN exchange rate must be above the withdrawal threshold before Curve->SP shift"
         );
 
         // Convert yTokens to LUSD3CRV-f
-        uint256 lusd3CRVBalanceBefore = curvePool.balanceOf(address(this));
+       // uint256 lusd3CRVBalanceBefore = curvePool.balanceOf(address(this));
 
-        // ownedLUSDInCurve > 0 implied by _requireNonZeroAmount(clampedLUSDToShift)
-        uint256 yTokensToBurnFromCurveVault = yTokensHeldByCBM * clampedLUSDToShift / ownedLUSDInCurve;
-        _withdrawFromCurve(yTokensToBurnFromCurveVault);
-        uint256 lusd3CRVBalanceDelta = curvePool.balanceOf(address(this)) - lusd3CRVBalanceBefore;
+        // ownedLUSDInCurve > 0 implied by _requireNonZeroAmount(clampedBEANToShift)
+        //uint256 yTokensToBurnFromCurveVault = yTokensHeldByCBM * clampedBEANToShift / ownedLUSDInCurve;
+        //_withdrawFromCurve(yTokensToBurnFromCurveVault);
+        //uint256 lusd3CRVBalanceDelta = curvePool.balanceOf(address(this)) - lusd3CRVBalanceBefore;
 
         // Withdraw LUSD from Curve
-        uint256 lusdBalanceBefore = beanToken.balanceOf(address(this));
+        //uint256 lusdBalanceBefore = beanToken.balanceOf(address(this));
         /* TODO: Determine if we should pass a minimum amount of LUSD to receive here. Seems infeasible to determinine the mininum on-chain from
         * Curve spot price / quantities, which are manipulable. */
-        curvePool.remove_liquidity_one_coin(lusd3CRVBalanceDelta, INDEX_OF_LUSD_TOKEN_IN_CURVE_POOL, 0);
-        uint256 lusdBalanceDelta = beanToken.balanceOf(address(this)) - lusdBalanceBefore;
+        //curvePool.remove_liquidity_one_coin(lusd3CRVBalanceDelta, INDEX_OF_LUSD_TOKEN_IN_CURVE_POOL, 0);
+        //uint256 lusdBalanceDelta = beanToken.balanceOf(address(this)) - lusdBalanceBefore;
 
         // Assertion should hold in principle. In practice, there is usually minor rounding error
         // assert(lusdBalanceDelta == _lusdToShift);
 
         // Deposit the received LUSD to B.Protocol LUSD vault
-        _depositToBAMM(lusdBalanceDelta);
+        //_depositToBAMM(lusdBalanceDelta);
+         // TODO: Fix psuedocode
+        (toSeason,fromAmount,toAmount,fromBdv,toBdv) = beanstalk.convert(convertData,crates,amounts);
 
-        // Ensure the Curve->SP shift has decreased the 3CRV:LUSD exchange rate, but not into unprofitable territory
-        uint256 finalExchangeRate = _get3CRVLUSDExchangeRate(_3crvVirtualPrice);
+        // // Ensure the Curve->SP shift has decreased the 3CRV:LUSD exchange rate, but not into unprofitable territory
+        // uint256 finalExchangeRate = _get3CRVBEANExchangeRate(_3crvVirtualPrice);
 
-        require(
-            finalExchangeRate < initialExchangeRate &&
-            finalExchangeRate >= curveWithdrawal3CRVLUSDExchangeRateThreshold,
-            "CBM: Curve->SP shift must increase 3CRV:LUSD exchange rate to a value above the withdrawal threshold"
-        );
+        // require(
+        //     finalExchangeRate < initialExchangeRate &&
+        //     finalExchangeRate >= curveWithdrawalBEAN3CRVExchangeRateThreshold,
+        //     "CBM: Curve->SP shift must increase 3CRV:LUSD exchange rate to a value above the withdrawal threshold"
+        // );
     }
 
+    function _requireAbovePeg() internal view returns (bool) {
+        require(Beanstalk.abovePeg() == true);
+    }
+
+    function _requireBelowPeg() internal view returns (bool) {
+        require(Beanstalk.abovePeg() == false);
+    }
     // --- B.Protocol debt functions ---
 
     // If the actual balance of B.Protocol is higher than our internal accounting,
@@ -713,27 +714,27 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
     // Returns the value updated
 
     // TODO: Balance will not change for beanstalk and therefore not needed
-    function _updateBAMMDebt() internal returns (uint256, uint256) {
-        (, uint256 lusdInBAMMSPVault,) = bammSPVault.getLUSDValue();
-        uint256 bammLUSDDebtCached = bammLUSDDebt;
+    // function _updateBAMMDebt() internal returns (uint256, uint256) {
+    //     (, uint256 lusdInBAMMSPVault,) = bammSPVault.getLUSDValue();
+    //     uint256 bammLUSDDebtCached = bammLUSDDebt;
 
-        // If the actual balance of B.Protocol is higher than our internal accounting,
-        // it means that B.Protocol has had gains (through sell of ETH or LQTY).
-        // We account for those gains
-        // If the balance was lower (which would mean losses), we expect them to be eventually recovered
-        if (lusdInBAMMSPVault > bammLUSDDebtCached) {
-            bammLUSDDebt = lusdInBAMMSPVault;
-            return (lusdInBAMMSPVault, lusdInBAMMSPVault);
-        }
+    //     // If the actual balance of B.Protocol is higher than our internal accounting,
+    //     // it means that B.Protocol has had gains (through sell of ETH or LQTY).
+    //     // We account for those gains
+    //     // If the balance was lower (which would mean losses), we expect them to be eventually recovered
+    //     if (lusdInBAMMSPVault > bammLUSDDebtCached) {
+    //         bammLUSDDebt = lusdInBAMMSPVault;
+    //         return (lusdInBAMMSPVault, lusdInBAMMSPVault);
+    //     }
 
-        return (bammLUSDDebtCached, lusdInBAMMSPVault);
-    }
+    //     return (bammLUSDDebtCached, lusdInBAMMSPVault);
+    // }
 
     // TODO: Change to wrapper for beanstalk deposit
-    function _depositToBAMM(uint256 _beanAmount) internal {
-        bammSPVault.deposit(_beanAmount);
-        bammLUSDDebt += _beanAmount;
-    }
+    // function _depositToBAMM(uint256 _beanAmount) internal {
+    //     bammSPVault.deposit(_beanAmount);
+    //     bammLUSDDebt += _beanAmount;
+    // }
 
     // TODO: Change to wrapper for beanstalk withdraw
     function _withdrawFromSilo(uint256 _beanAmount, address _to) internal {
@@ -749,23 +750,23 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
     // otherwise the internal accounting would fail
 
     // TODO: Change to wrapper for beanstalk deposit
-    function _depositToCurve(uint256 _lusd3CRV) internal {
-        uint256 yTokensBalanceBefore = yearnCurveVault.balanceOf(address(this));
-        yearnCurveVault.deposit(_lusd3CRV);
-        uint256 yTokensBalanceDelta = yearnCurveVault.balanceOf(address(this)) - yTokensBalanceBefore;
-        yTokensHeldByCBM += yTokensBalanceDelta;
-    }
+    // function _depositToCurve(uint256 _lusd3CRV) internal {
+    //     uint256 yTokensBalanceBefore = yearnCurveVault.balanceOf(address(this));
+    //     yearnCurveVault.deposit(_lusd3CRV);
+    //     uint256 yTokensBalanceDelta = yearnCurveVault.balanceOf(address(this)) - yTokensBalanceBefore;
+    //     yTokensHeldByCBM += yTokensBalanceDelta;
+    // }
 
     // TODO: Change to wrapper for beanstalk withdraw
-    function _withdrawFromCurve(uint256 _yTokensToSwap) internal {
-        yearnCurveVault.withdraw(_yTokensToSwap);
-        yTokensHeldByCBM -= _yTokensToSwap;
-    }
+    // function _withdrawFromCurve(uint256 _yTokensToSwap) internal {
+    //     yearnCurveVault.withdraw(_yTokensToSwap);
+    //     yTokensHeldByCBM -= _yTokensToSwap;
+    // }
 
-    function _transferFromCurve(address _to, uint256 _yTokensToTransfer) internal {
-        yearnCurveVault.transfer(_to, _yTokensToTransfer);
-        yTokensHeldByCBM -= _yTokensToTransfer;
-    }
+    // function _transferFromCurve(address _to, uint256 _yTokensToTransfer) internal {
+    //     yearnCurveVault.transfer(_to, _yTokensToTransfer);
+    //     yTokensHeldByCBM -= _yTokensToTransfer;
+    // }
 
     // --- Migration functionality ---
 
@@ -808,7 +809,7 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
 
     // --- Helper functions ---
     // TODO change 
-    function _getLUSD3CRVExchangeRate(uint256 _3crvVirtualPrice) internal view returns (uint256) {
+    function _getBEAN3CRVExchangeRate(uint256 _3crvVirtualPrice) internal view returns (uint256) {
         // Get the amount of 3CRV that would be received by swapping 1 LUSD (after deduction of fees)
         // If p_{LUSD:3CRV} is the price of LUSD quoted in 3CRV, then this returns p_{LUSD:3CRV} * (1 - fee)
         // as long as the pool is large enough so that 1 LUSD doesn't introduce significant slippage.
@@ -817,7 +818,7 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         return dy * _3crvVirtualPrice / 1e18;
     }
     // TODO change 
-    function _get3CRVLUSDExchangeRate(uint256 _3crvVirtualPrice) internal view returns (uint256) {
+    function _get3CRVBEANExchangeRate(uint256 _3crvVirtualPrice) internal view returns (uint256) {
         // Get the amount of LUSD that would be received by swapping 1 3CRV (after deduction of fees)
         // If p_{3CRV:LUSD} is the price of 3CRV quoted in LUSD, then this returns p_{3CRV:LUSD} * (1 - fee)
         // as long as the pool is large enough so that 1 3CRV doesn't introduce significant slippage.
@@ -827,39 +828,40 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
     }
 
     // Calc decayed redemption rate
-    function calcRedemptionFeePercentage(uint256 _fractionOfBLUSDToRedeem) public view returns (uint256) {
-        uint256 minutesPassed = _minutesPassedSinceLastRedemption();
-        uint256 decayFactor = decPow(MINUTE_DECAY_FACTOR, minutesPassed);
+    /// note: no fees, functions not needed
+    // function calcRedemptionFeePercentage(uint256 _fractionOfBLUSDToRedeem) public view returns (uint256) {
+    //     uint256 minutesPassed = _minutesPassedSinceLastRedemption();
+    //     uint256 decayFactor = decPow(MINUTE_DECAY_FACTOR, minutesPassed);
 
-        uint256 decayedBaseRedemptionRate = baseRedemptionRate * decayFactor / DECIMAL_PRECISION;
+    //     uint256 decayedBaseRedemptionRate = baseRedemptionRate * decayFactor / DECIMAL_PRECISION;
 
-        // Increase redemption base rate with the new redeemed amount
-        uint256 newBaseRedemptionRate = decayedBaseRedemptionRate + _fractionOfBLUSDToRedeem / BETA;
-        newBaseRedemptionRate = Math.min(newBaseRedemptionRate, DECIMAL_PRECISION); // cap baseRate at a maximum of 100%
-        //assert(newBaseRedemptionRate <= DECIMAL_PRECISION); // This is already enforced in the line above
+    //     // Increase redemption base rate with the new redeemed amount
+    //     uint256 newBaseRedemptionRate = decayedBaseRedemptionRate + _fractionOfBLUSDToRedeem / BETA;
+    //     newBaseRedemptionRate = Math.min(newBaseRedemptionRate, DECIMAL_PRECISION); // cap baseRate at a maximum of 100%
+    //     //assert(newBaseRedemptionRate <= DECIMAL_PRECISION); // This is already enforced in the line above
 
-        return newBaseRedemptionRate;
-    }
+    //     return newBaseRedemptionRate;
+    // }
 
     // Update the base redemption rate and the last redemption time (only if time passed >= decay interval. This prevents base rate griefing)
-    function _updateRedemptionFeePercentage(uint256 _fractionOfBLUSDToRedeem) internal returns (uint256) {
-        uint256 newBaseRedemptionRate = calcRedemptionFeePercentage(_fractionOfBLUSDToRedeem);
-        baseRedemptionRate = newBaseRedemptionRate;
-        emit BaseRedemptionRateUpdated(newBaseRedemptionRate);
+    // function _updateRedemptionFeePercentage(uint256 _fractionOfBLUSDToRedeem) internal returns (uint256) {
+    //     uint256 newBaseRedemptionRate = calcRedemptionFeePercentage(_fractionOfBLUSDToRedeem);
+    //     baseRedemptionRate = newBaseRedemptionRate;
+    //     emit BaseRedemptionRateUpdated(newBaseRedemptionRate);
 
-        uint256 timePassed = block.timestamp - lastRedemptionTime;
+    //     uint256 timePassed = block.timestamp - lastRedemptionTime;
 
-        if (timePassed >= SECONDS_IN_ONE_MINUTE) {
-            lastRedemptionTime = block.timestamp;
-            emit LastRedemptionTimeUpdated(block.timestamp);
-        }
+    //     if (timePassed >= SECONDS_IN_ONE_MINUTE) {
+    //         lastRedemptionTime = block.timestamp;
+    //         emit LastRedemptionTimeUpdated(block.timestamp);
+    //     }
 
-        return newBaseRedemptionRate;
-    }
+    //     return newBaseRedemptionRate;
+    // }
 
-    function _minutesPassedSinceLastRedemption() internal view returns (uint256) {
-        return (block.timestamp - lastRedemptionTime) / SECONDS_IN_ONE_MINUTE;
-    }
+    // function _minutesPassedSinceLastRedemption() internal view returns (uint256) {
+    //     return (block.timestamp - lastRedemptionTime) / SECONDS_IN_ONE_MINUTE;
+    // }
 
     function _getBondWithChickenInFeeApplied(uint256 _bondLUSDAmount) internal view returns (uint256, uint256) {
         // Apply zero fee in migration mode
@@ -1066,8 +1068,8 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         require(block.timestamp >= shiftWindowStartTime && block.timestamp < shiftWindowFinishTime, "CBM: Shift only possible inside shifting window");
     }
     // TODO change?
-    function _requirePermanentGreaterThanCurve(uint256 _totalLUSDInCurve) internal view {
-        require(permanentBEAN >= _totalLUSDInCurve, "CBM: The amount in Curve cannot be greater than the Permanent bucket");
+    function _requirePermanentGreaterThanCurve(uint256 _totalBEANInCurve) internal view {
+        require(permanentBEAN3CRV >= _totalBEANInCurve, "CBM: The amount in Curve cannot be greater than the Permanent bucket");
     }
 
     // --- Getter convenience functions ---
@@ -1119,11 +1121,12 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         return _calcBondBLUSDCap(_getBondAmountMinusChickenInFee(bond.beanAmount), backingRatio);
     }
     // TODO change
-    function getLUSDInBAMMSPVault() external view returns (uint256) {
-        (, uint256 lusdInBAMMSPVault,) = bammSPVault.getLUSDValue();
+    // function getLUSDInBAMMSPVault() external view returns (uint256) {
+    //     (, uint256 lusdInBAMMSPVault,) = bammSPVault.getLUSDValue();
 
-        return lusdInBAMMSPVault;
-    }
+    //     return lusdInBAMMSPVault;
+    // }
+    
 
     // Native vault token value getters
     // TODO change
@@ -1159,11 +1162,12 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
 
     // Acquired getters
     // TODO change
+    // not sure if this is needed, 
     function _getLUSDSplit(uint256 _bammLUSDValue)
         internal
         view
         returns (
-            uint256 acquiredLUSDInSP, //reserve BEAN in silo
+            uint256 acquiredLUSDInSP, // reserve BEAN in silo
             uint256 acquiredLUSDInCurve, // reserve BEAN-3CRV in silo
             uint256 ownedLUSDInSP, // permanent BEAN in silo
             uint256 ownedLUSDInCurve, // permanent BEAN3CRV in silo 
@@ -1219,33 +1223,30 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         return acquiredLUSDInCurve;
     }
 
-    // Permanent getter
-    // TODO change
-    function getPermanentLUSD() external view returns (uint256) {
-        return permanentBEAN;
-    }
+    // note: not needed due to changing vars to public
+    // // Permanent getter
+    // // TODO change
+    // function getPermanentLUSD() external view returns (uint256) {
+    //     return permanentBEAN;
+    // }
 
-    // Owned getters
-    // TODO change
-    function getOwnedLUSDInSP() external view returns (uint256) {
-        uint256 bammLUSDValue = _getInternalBAMMLUSDValue();
-        (,, uint256 ownedLUSDInSP,,) = _getLUSDSplit(bammLUSDValue);
-        return ownedLUSDInSP;
-    }
-    // TODO change
-    function getOwnedLUSDInCurve() external view returns (uint256) {
-        uint256 bammLUSDValue = _getInternalBAMMLUSDValue();
-        (,,, uint256 ownedLUSDInCurve,) = _getLUSDSplit(bammLUSDValue);
-        return ownedLUSDInCurve;
-    }
+    // // Owned getters
+    // // TODO change
+    // function getOwnedLUSDInSP() external view returns (uint256) {
+    //     uint256 bammLUSDValue = _getInternalBAMMLUSDValue();
+    //     (,, uint256 ownedLUSDInSP,,) = _getLUSDSplit(bammLUSDValue);
+    //     return ownedLUSDInSP;
+    // }
+    // // TODO change
+    // function getOwnedLUSDInCurve() external view returns (uint256) {
+    //     uint256 bammLUSDValue = _getInternalBAMMLUSDValue();
+    //     (,,, uint256 ownedLUSDInCurve,) = _getLUSDSplit(bammLUSDValue);
+    //     return ownedLUSDInCurve;
+    // }
 
     // Other getters
 
     function calcSystemBackingRatio() public view returns (uint256) {
-        return _calcSystemBackingRatioFromBAMMValue();
-    }
-    // TODO change
-    function _calcSystemBackingRatioFromBAMMValue() public view returns (uint256) {
         uint256 totalBBEANSupply = bBEANToken.totalSupply();
         //(uint256 acquiredLUSDInSP, uint256 acquiredLUSDInCurve,,,) = _getLUSDSplit(_bammLUSDValue);
 
@@ -1253,38 +1254,40 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
          * i.e. before the first chickenIn. For now, return a backing ratio of 1. Note: Both quantities would be 0
          * also when the bLUSD supply is fully redeemed.
          */
-        
-        //if (totalBBEANSupply == 0  && totalAcquiredLUSD == 0) {return 1e18;}
-        //if (totalBBEANSupply == 0) {return MAX_UINT256;}
         if (totalBBEANSupply == 0) {return 1e18;}
+        
+        // BEAN is 6 decimals, BEAN3CRV is 18 Decimals
+        // TODO: can we assume 1 BEAN = 1 BEAN3CRV LP when DeltaB == 0? 
+        return  ((reserveBEAN * 1e12) + reserveBEAN3CRV)  / totalBBEANSupply;
 
-        return  reserveBEAN * 1e18 / totalBBEANSupply;
     }
+
 
     function calcUpdatedAccrualParameter() external view returns (uint256) {
         (uint256 updatedAccrualParameter, ) = _calcUpdatedAccrualParameter(accrualParameter, accrualAdjustmentPeriodCount);
         return updatedAccrualParameter;
     }
     // TODO change
-    function getBAMMLUSDDebt() external view returns (uint256) {
-        return bammLUSDDebt;
-    }
+    // function getBAMMLUSDDebt() external view returns (uint256) {
+    //     return bammLUSDDebt;
+    // }
 
-    function getTreasury()
-        external
-        view
-        returns (
-            // We don't normally use leading underscores for return values,
-            // but we do so here in order to avoid shadowing state variables
-            uint256 _pendingLUSD,
-            uint256 _totalAcquiredLUSD,
-            uint256 _permanentLUSD
-        )
-    {
-        _pendingLUSD = pendingBEAN;
-        _totalAcquiredLUSD = getTotalAcquiredLUSD();
-        _permanentLUSD = permanentBEAN;
-    }
+    // note: not needed as vars are now public
+    // function getTreasury()
+    //     external
+    //     view
+    //     returns (
+    //         // We don't normally use leading underscores for return values,
+    //         // but we do so here in order to avoid shadowing state variables
+    //         uint256 _pendingLUSD,
+    //         uint256 _totalAcquiredLUSD,
+    //         uint256 _permanentLUSD
+    //     )
+    // {
+    //     _pendingLUSD = pendingBEAN;
+    //     _totalAcquiredLUSD = getTotalAcquiredLUSD();
+    //     _permanentLUSD = permanentBEAN;
+    // }
 
     function getOpenBondCount() external view returns (uint256 openBondCount) {
         return bondNFT.totalSupply() - countChickenIn - countChickenOut;
