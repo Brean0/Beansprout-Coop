@@ -1,3 +1,8 @@
+# Beanstalk Coop - Technical Readme
+Breans Side project - implmentation of the LUSD Chicken Bonds onto the beanstalk protocol
+
+TL:DR ![image](https://user-images.githubusercontent.com/90539204/199611685-cac803c2-fcdc-4e52-9926-89c47ef5f8ca.png)
+
 # LUSD Chicken Bonds - Technical Readme
 
 LUSD Chicken bonds is a specific implementation of the General Chicken Bonds model described in the whitepaper.
