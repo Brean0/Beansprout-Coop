@@ -135,7 +135,7 @@ For the global permanent and acquired buckets, the split is updated by shifter f
 
 The **pending** bucket and individual **permanent** buckets are tracked by state variables in `ChickenBondManager`, and updated when funds are added/removed.  Specifically, these state variables are:
 
-- `pendingLUSD`
+- `pendingBEAN`
 - `permanentLUSDInBAMMSPVault`
 - `permanentLUSDInYearnCurveVault`
 
@@ -234,7 +234,7 @@ Yearn Curve vault is periodically manually harvested by the Yearn team in order 
 
 ## Public state-changing functions
 
-- `createBond(_lusdAmount):` creates a bond for the user and mints a bond NFT to their address. A user may create multiple bonds.
+- `createBond(_beanAmount):` creates a bond for the user and mints a bond NFT to their address. A user may create multiple bonds.
 
 - `chickenOut(bondID, _minLUSD):` removes the given bond from the system and burns the bond NFT. Refunds the bonded LUSD to the caller. Takes a `_minLUSD` parameter which allows the user to specify the minimum LUSD they should receive (useful in case the system temporarily can't send them their full bonded LUSD amount, due to pending yield conversion).
 
@@ -246,7 +246,7 @@ Yearn Curve vault is periodically manually harvested by the Yearn team in order 
 
 - `shiftLUSDFromCurveToSP(_maxLUSDToShift):` Shifts up to the given LUSD amount from the Curve to the B.AMM SP vault. Pulls funds from the Curve acquired and permanent buckets, and moves them to the acquired and permanent buckets in the SP vault, respectively. Only succeeds if the shift improves the LUSD peg.
 
-- `sendFeeShare(_lusdAmount):` Callable only by Yearn Governance. Transfers the provided LUSD to the ChickenBondManager contract, and deposits it to the B.AMM SP vault.
+- `sendFeeShare(_beanAmount):` Callable only by Yearn Governance. Transfers the provided LUSD to the ChickenBondManager contract, and deposits it to the B.AMM SP vault.
 
 - `activateMigration():` Callable only by Yearn Governance. Moves all funds in permanent buckets to their corresponding acquired buckets, thus making all system funds (except for the pending bucket) redeemable.
 
@@ -335,5 +335,5 @@ If you want to create an LUSD bond from your Gnosis safe multi-sig, we recommend
 - In Gnosis Safe, goto "New transaction" -> "Contract interaction"
 - Input the ChickenBondManager contract address: 0x57619FE9C539f890b19c61812226F9703ce37137
 - Choose the `createBond` function from the dropdown list
-- In the `_lusdAmount` field, enter the amount with 18 zeros on the end, e.g. to bond 1234 LUSD, enter `1234000000000000000000`
+- In the `_beanAmount` field, enter the amount with 18 zeros on the end, e.g. to bond 1234 LUSD, enter `1234000000000000000000`
 - Submit, sign and execute the transaction in Gnosis Safe
