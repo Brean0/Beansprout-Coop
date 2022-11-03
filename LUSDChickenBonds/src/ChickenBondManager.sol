@@ -100,16 +100,28 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         uint256 redemptionFeeMinuteDecayFactor; // Factor by which redemption fee decays (exponentially) every minute
     }
     // TODO: see above
-    struct BondData {
-        uint256 beanAmount;
-        uint64 claimedBBEAN; // In BLUSD units without decimals
-        uint64 startTime;
-        uint64 endTime; // Timestamp of chicken in/out event
-        BondStatus status;
-        uint32 season;
-        TokenType token;
-    }
+    // struct OldBondData {
+    //     uint256 beanAmount;
+    //     uint64 claimedBBEAN; // In BLUSD units without decimals
+    //     uint64 startTime;
+    //     uint64 endTime; // Timestamp of chicken in/out event
+    //     BondStatus status;
+    //     uint32 season;
+    //     TokenType token;
+    // }
+    
 
+    // packed into one slot provides signficiant gas savings for the user
+    struct BondData {
+        uint128 beanAmount; // lets be honest, the supply of bean won't pass uint128, much less one bond
+        uint48 claimedBBEAN; // without decimals, this only overflows if one bond has 100 TRILLION bBEAN
+        uint48 startTime; // uint48 is more than big enough to store
+        uint48 endTime; // same as above
+        uint32 season;
+        BondStatus status; // uint8
+        TokenType token; // uint8
+    }
+    
     enum TokenType {
         BEAN,
         BEAN3CRV
@@ -513,11 +525,12 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         // Transfer the chicken in fee to the LUSD/bLUSD AMM LP Rewards staking contract during normal mode.
         if (!migration) {
             //_withdrawFromSPVaultAndTransferToRewardsStakingContract(chickenInFeeAmount);
-            // TODO: This requires us to withdraw, claim, then transfer the BEAN to the bean staking gauge
+            // TODO: write _queueWithdraw
             _queueWithdraw(chickenInFeeAmount);
             
         }
 
+        // TODO: convert season deposit with the reserve season, 
         emit BondClaimed(msg.sender, _bondID, bond.beanAmount, accruedBBEAN, beanSurplus, chickenInFeeAmount, migration, newDna);
     }
 
