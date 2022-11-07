@@ -1,5 +1,5 @@
+Beanstalk/=lib/Beanstalk/
 b-protocol/=lib/b-protocol/
-beanstalk/=lib/beanstalk/
 datetime/=lib/datetime/
 ds-test/=lib/forge-std/lib/ds-test/src/
 forge-std/=lib/forge-std/src/

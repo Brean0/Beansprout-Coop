@@ -10,3 +10,6 @@
 [submodule "LUSDChickenBonds/lib/datetime"]
 	path = LUSDChickenBonds/lib/datetime
 	url = https://github.com/bokkypoobah/BokkyPooBahsDateTimeLibrary
+[submodule "LUSDChickenBonds/lib/Beanstalk"]
+	path = LUSDChickenBonds/lib/Beanstalk
+	url = https://github.com/BeanstalkFarms/Beanstalk
