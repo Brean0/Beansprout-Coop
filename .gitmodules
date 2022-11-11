@@ -13,3 +13,6 @@
 [submodule "LUSDChickenBonds/lib/Beanstalk"]
 	path = LUSDChickenBonds/lib/Beanstalk
 	url = https://github.com/BeanstalkFarms/Beanstalk
+[submodule "ROOTChickenBonds/ROOTChickenBonds/lib/Beanstalk"]
+	path = ROOTChickenBonds/ROOTChickenBonds/lib/Beanstalk
+	url = https://github.com/BeanstalkFarms/Beanstalk
