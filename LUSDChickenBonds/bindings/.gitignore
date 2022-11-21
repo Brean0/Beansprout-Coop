@@ -1,6 +1,0 @@
-/node_modules
-/dist
-/artifacts
-/src/generated
-/tmp
-.env
