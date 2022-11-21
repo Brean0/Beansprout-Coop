@@ -755,4 +755,13 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
     function getOpenBondCount() external view returns (uint256 openBondCount) {
         return bondNFT.totalSupply() - countChickenIn - countChickenOut;
     }
+
+    function getReserves() external view returns(uint256,uint160,uint96) {
+        tmpRootBucket = rootBucket;
+        return(
+            tmpRootBucket.pending,
+            tmpRootBucket.reserve,
+            tmpRootBucket.lastBDV
+        )
+    }
 }

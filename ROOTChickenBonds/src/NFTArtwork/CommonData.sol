@@ -23,9 +23,8 @@ struct CommonData {
     // IBondNFT.BondExtraData
     uint80 initialHalfDna;
     uint80 finalHalfDna;
-    uint32 troveSize;
-    uint32 lqtyAmount;
-    uint32 curveGaugeSlopes;
+    uint48 rootSupply;
+    uint48 beanAmount;
 
     // Attributes derived from the DNA
     EggTraitWeights.BorderColor borderColor;

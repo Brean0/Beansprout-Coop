@@ -6,12 +6,20 @@ import "./IChickenBondManager.sol";
 
 
 interface IBondNFT is IERC721Enumerable {
+    // struct BondExtraData {
+    //     uint80 initialHalfDna;
+    //     uint80 finalHalfDna;
+    //     uint32 troveSize;         // Debt in LUSD
+    //     uint32 lqtyAmount;        // Holding LQTY, staking or deposited into Pickle
+    //     uint32 curveGaugeSlopes;  // For 3CRV and Frax pools combined
+    // }
+
     struct BondExtraData {
         uint80 initialHalfDna;
         uint80 finalHalfDna;
-        uint32 troveSize;         // Debt in LUSD
-        uint32 lqtyAmount;        // Holding LQTY, staking or deposited into Pickle
-        uint32 curveGaugeSlopes;  // For 3CRV and Frax pools combined
+        uint48 rootSupply;        // Root Supply
+        uint48 beanAmount;        // beans in root
+        //uint32 curveGaugeSlopes;  // For 3CRV and Frax pools combined
     }
 
     function mint(address _bonder, uint256 _permanentSeed) external returns (uint256, uint80);
