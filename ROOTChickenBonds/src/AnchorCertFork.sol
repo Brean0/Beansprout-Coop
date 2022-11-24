@@ -118,6 +118,41 @@ contract AnchorCertificates is ERC721 {
         "REASON"
     ];
 
+    string[32] tarot = [
+        "THE FOOL",
+        "THE MAGICIAN",
+        "THE HIGH PRIESTRESS",
+        "THE EMPRESS",
+        "THE EMPEROR",
+        "THE HIEROPHANT",
+        "THE LOVERS",
+        "THE CHARIOT",
+        "STRENGTH",
+        "THE HERMIT",
+        "THE WHEEL OF FORTUNE",
+        "JUSTICE",
+        "THE HANGED MAN",
+        "DEATH",
+        "TEMPERANCE",
+        "THE DEVIL",
+        "THE TOWER",
+        "THE STAR",
+        "THE MOON",
+        "THE SUN",
+        "JUDGEMENT",
+        "THE WORLD",
+        "ACE OF SWORDS",
+        "TWO OF WANDS",
+        "THREE OF CUPS",
+        "FOUR OF PENTACLES",
+        "FIVE OF SWORDS",
+        "SIX OF WANDS",
+        "SEVEN OF CUPS",
+        "EIGHT OF PENTACLES",
+        "NINE OF SWORDS",
+        "TEN OF WANDS"
+    ];
+
     // Skyscraper Barcode
     struct Skyscraper {
         string h; // height
@@ -182,16 +217,16 @@ contract AnchorCertificates is ERC721 {
     function generateImage(uint256 tokenId) public view returns (string memory) {
         bytes memory hash = abi.encodePacked(bytes32(tokenId));
         uint256 pIndex = toUint8(hash,0)/16; // 16 palettes
-        uint256 rIndex = toUint8(hash,1)/4; // 64 reasons
+        uint256 tIndex = toUint8(hash,1)/8; // 32 Arcana
 
         /* this is broken into functions to avoid stack too deep errors */
         string memory paletteSection = generatePaletteSection(tokenId, pIndex);
         string memory skyscraper = generateSkyscrapers(hash, pIndex);
 
-        string memory class = 'DF'; // DF for Default
-        if(certificates[tokenId].sponsored != 0x0000000000000000000000000000000000000000) {
-            class = 'DX'; // DX for deluxe
-        }
+        // string memory class = 'DF'; // DF for Default
+        // if(certificates[tokenId].sponsored != 0x0000000000000000000000000000000000000000) {
+        //     class = 'DX'; // DX for deluxe
+        // }
 
         return string(
             abi.encodePacked(
@@ -201,17 +236,17 @@ contract AnchorCertificates is ERC721 {
                 '<text x="215" y="80" class="small">BEAN SPROUT</text>',
                 //'<text x="15" y="80" class="medium">EDITION> ',class,'1</text>',
                 '<text x="15" y="100" class="medium">ID> ',toString(tokenId),'</text>',
-                '<text x="15" y="120" class="medium">REASON:</text>',
+                '<text x="15" y="120" class="medium">ARCANA:</text>',
                 '<rect x="15" y="125" width="205" height="40" style="fill:white;opacity:0.5"/>',
-                '<text x="15" y="140" class="medium">TO ',reasons[rIndex],'</text>',
-                '<text x="15" y="190" class="small">SPONSORED BY:</text>',
-                '<text x="15" y="205" style="font-size:8px">',toHexString(uint160(certificates[tokenId].sponsored), 20),'</text>',
+                '<text x="15" y="140" class="medium">',timeline[tIndex],'</text>',
+                //'<text x="15" y="190" class="small">FARMED BY:</text>',
+                //'<text x="15" y="205" style="font-size:8px">',toHexString(uint160(certificates[tokenId].sponsored), 20),'</text>',
                 //'<text x="15" y="230" class="tiny">Under Section 1.C of the Uploaded Minds And Human</text>',
                 '<text x="15" y="230" class="tiny">A national debt, if it is not excessive,</text>',
                 '<text x="15" y="240" class="tiny">will be to us a national blessing.</text>',
-                '<text x="15" y="250" class="tiny">of Earth. If Sponsored, Under Section 6.F: The Bearer</text>',
-                '<text x="15" y="260" class="tiny">Has Immediate Access To The Inner Bandwidth Wells.</text>',
-                '<text x="15" y="270" class="tiny">Under Section 9.A: If Destroyed, Bearer Will Be Delisted.</text>',
+                // '<text x="15" y="250" class="tiny">of Earth. If Sponsored, Under Section 6.F: The Bearer</text>',
+                // '<text x="15" y="260" class="tiny">Has Immediate Access To The Inner Bandwidth Wells.</text>',
+                // '<text x="15" y="270" class="tiny">Under Section 9.A: If Destroyed, Bearer Will Be Delisted.</text>',
                 '<style>.svgBody {font-family: "Courier New" } .tiny {font-size:6px; } .small {font-size: 12px;}.medium {font-size: 18px;}</style>',
                 '</svg>'
             )
@@ -224,7 +259,7 @@ contract AnchorCertificates is ERC721 {
                 '<rect y="205" width="300" height="75" rx="10" style="fill:',palette[pIndex][3],'" />',
                 '<rect y="60" width="300" height="115" style="fill:',palette[pIndex][1],'"/>',
                 '<rect y="175" width="300" height="40" style="fill:',palette[pIndex][2],'" />',
-                '<text x="15" y="25" class="medium">BEANSPROUT BOND</text>',
+                '<text x="15" y="25" class="medium">BEANSPROUT BOND:</text>',
                 '<text x="17" y="50" class="small" opacity="0.5">',substring(toString(tokenId),0,24),'</text>',
                 '<circle cx="255" cy="30" r="20" stroke="white" fill="transparent" stroke-width="5" opacity="0.7"/>',
                 '<path d="M 230 55 l 30 -40" stroke="',palette[pIndex][3],'" stroke-width="5"/>',
