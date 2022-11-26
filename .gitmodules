@@ -16,3 +16,6 @@
 [submodule "ROOTChickenBonds/ROOTChickenBonds/lib/Beanstalk"]
 	path = ROOTChickenBonds/ROOTChickenBonds/lib/Beanstalk
 	url = https://github.com/BeanstalkFarms/Beanstalk
+[submodule "ROOTChickenBonds/lib/openzeppelin-contracts"]
+	path = ROOTChickenBonds/lib/openzeppelin-contracts
+	url = https://github.com/openzeppelin/openzeppelin-contracts
