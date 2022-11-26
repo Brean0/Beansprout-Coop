@@ -83,7 +83,7 @@ contract BondNFT is ERC721Enumerable, Ownable, IBondNFT {
     function setArtworkAddress(address _artworkAddress) external onlyOwner {
         // Make sure addresses have been set, as we'll be renouncing ownership
         require(address(chickenBondManager) != address(0), "BondNFT: setAddresses() must be called first");
-
+        
         artwork = IBondNFTArtwork(_artworkAddress);
         renounceOwnership();
     }

@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity =0.7.6;
+pragma solidity ^0.8.0;
 pragma expermental ABIEncoderV2;
 
 import {LibTransfer} from "beanstalk/token/LibTransfer.sol";
-import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/SafeERC20.sol";
 
 
 interface IBeanstalk {
