@@ -4,8 +4,9 @@ pragma solidity ^0.8.10;
 import "./IBEANToken.sol";
 import "./IBBEANToken.sol";
 import "./ICurvePool.sol";
-import "./IYearnVault.sol";
-import "./IBAMM.sol";
+import "./Interfaces/IBeanstalk.sol";
+import "/IBAMM.sol";
+import "Beanstalk/protocol/contracts/libraries/Token/LibTransfer.sol";
 
 interface IChickenBondManager {
     // Valid values for `status` returned by `getBondData()`
@@ -19,14 +20,12 @@ interface IChickenBondManager {
     function beanToken() external view returns (IBEANToken);
     function bBEANToken() external view returns (IBBEANToken);
     function curvePool() external view returns (ICurvePool);
-    //function bammSPVault() external view returns (IBAMM);
-    //function yearnCurveVault() external view returns (IYearnVault);
     function beanstalk() external view returns (IBeanstalk);
 
     // constants
-    function INDEX_OF_LUSD_TOKEN_IN_CURVE_POOL() external pure returns (int128);
+    function INDEX_OF_ROOT_TOKEN_IN_CURVE_POOL() external pure returns (int128);
 
-    function createBond(uint256 _beanAmount) external returns (uint256);
+    function createBond(uint256 _RootAmount, LibTransfer.From fromMode) external returns (uint256);
     function createBondWithPermit(
         address owner, 
         uint256 amount, 
@@ -34,28 +33,28 @@ interface IChickenBondManager {
         uint8 v, 
         bytes32 r, 
         bytes32 s
-    ) external  returns (uint256);
-    function chickenOut(uint256 _bondID, uint256 _minLUSD) external;
+    ) external returns (uint256);
+    function chickenOut(uint256 _bondID, uint256 _minROOT, LibTransfer.To toMode) external;
     function chickenIn(uint256 _bondID) external;
-    function redeem(uint256 _bLUSDToRedeem, uint256 _minLUSDFromBAMMSPVault) external returns (uint256, uint256);
+    function redeem(uint256 _bROOTToRedeem, LibTransfer.To toMode) external returns (uint256, uint256);
 
     // getters
-    function calcRedemptionFeePercentage(uint256 _fractionOfBLUSDToRedeem) external view returns (uint256);
-    function getBondData(uint256 _bondID) external view returns (uint256 beanAmount, uint64 claimedBBEAN, uint64 startTime, uint64 endTime, uint8 status);
-    function getLUSDToAcquire(uint256 _bondID) external view returns (uint256);
-    function calcAccruedBLUSD(uint256 _bondID) external view returns (uint256);
-    function calcBondBLUSDCap(uint256 _bondID) external view returns (uint256);
-    function getLUSDInBAMMSPVault() external view returns (uint256);
-    function calcTotalYearnCurveVaultShareValue() external view returns (uint256);
-    function calcTotalLUSDValue() external view returns (uint256);
-    function getPendingLUSD() external view returns (uint256);
-    function getAcquiredLUSDInSP() external view returns (uint256);
-    function getAcquiredLUSDInCurve() external view returns (uint256);
-    function getTotalAcquiredLUSD() external view returns (uint256);
-    function getPermanentLUSD() external view returns (uint256);
-    function getOwnedLUSDInSP() external view returns (uint256);
-    function getOwnedLUSDInCurve() external view returns (uint256);
+    function calcRedemptionFeePercentage(uint256 _fractionOfbRootToRedeem) external view returns (uint256);
+    function getBondData(uint256 _bondID) external view returns (
+        uint112 beanAmount, 
+        uint96 rootBDV, 
+        uint40 startTime, 
+        uint8 status, 
+        uint40 endTime, 
+        uint216 claimedBRoot
+    );
+    function getRootToAcquire(uint256 _bondID) external view returns (uint256);
+    function calcAccruedBRoot(uint256 _bondID) external view returns (uint256);
+    function calcBondBRootCap(uint256 _bondID) external view returns (uint256);
+    function pendingROOT() external view returns (uint256);
+    function totalAcquiredRoot() external view returns (uint256);
+    function permanentRoot() external view returns (uint256);
+    function getReserves() external view returns(uint256,uint160,uint96,uint256);
     function calcSystemBackingRatio() external view returns (uint256);
     function calcUpdatedAccrualParameter() external view returns (uint256);
-    function getBAMMLUSDDebt() external view returns (uint256);
 }
