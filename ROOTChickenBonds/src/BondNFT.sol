@@ -163,7 +163,7 @@ contract BondNFT is ERC721Enumerable, Ownable, IBondNFT {
         require(msg.sender == address(chickenBondManager), "BondNFT: Caller must be ChickenBondManager");
     }
 
-    function generatePaletteSection(uint256 _bondIdhash, uint256 pIndex) internal view returns (string memory) {
+    function generatePaletteSection(uint256 _tokenIdhash, uint256 pIndex) internal view returns (string memory) {
         return string(abi.encodePacked(
                 // Border + sections
                 '<rect width="270" height="210" rx="10" style="fill:',palette[pIndex][0],'" />',
@@ -171,14 +171,16 @@ contract BondNFT is ERC721Enumerable, Ownable, IBondNFT {
                 '<rect y="60" width="270" height="75" style="fill:',palette[pIndex][1],'"/>',
                 '<rect y="130" width="270" height="40" style="fill:',palette[pIndex][2],'" />',
                 // text
-                '<text x="15" y="30" class="medium">BEANSPROUT BOND:</text>',
-                '<text x="17" y="45" class="small" opacity="0.5">',substring(toString(_bondIdhash),0,24),'</text>',
-                //bean logo :)
-                '<svg viewBox="-180 30 270 270"><path d="M81.17 44 60 99.44S36.52 60.19 81.17 44ZM68.92 96 83.8 56.37S111.22 78.11 68.92 96Z" stroke="#000" stroke-miterlimit="10" /></svg>'
+                '<text x="15" y="30" class="medium">COOP BOND:</text>',
+                '<text x="17" y="45" class="small" opacity="0.5">',substring(toString(_tokenIdhash),0,24),'</text>',
+                //root logo :)
+                '<svg viewBox="-1600 215 2000 900">',
+                '<path d="M34.9755 2.30389L129.327 57.5039L224.063 2.30389L255.097 20.736L129.327 93.0239L4.32568 20.736L34.9755 2.30389Z" fill="#40845F"/>',
+                '<path d="M129.327 93.0237V239.52L160.938 221.28V110.304L255.097 57.5997V20.7357L129.327 93.0237Z" fill="#00F97C"/>',
+                '<path d="M129.327 93.0237V239.52L97.7149 221.28V110.304L3.55615 57.5997V20.7357L129.327 93.0237Z" fill="#05301C"/></svg>'
             )
         );
     }
-
     // GENERIC helpers
 
     // helper function for generation

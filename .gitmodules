@@ -1,17 +1,17 @@
-[submodule "LUSDChickenBonds/lib/openzeppelin-contracts"]
-	path = LUSDChickenBonds/lib/openzeppelin-contracts
+[submodule "ROOTChickenBonds/lib/openzeppelin-contracts"]
+	path = ROOTChickenBonds/lib/openzeppelin-contracts
 	url = https://github.com/openzeppelin/openzeppelin-contracts
-[submodule "LUSDChickenBonds/lib/forge-std"]
-	path = LUSDChickenBonds/lib/forge-std
+[submodule "ROOTChickenBonds/lib/forge-std"]
+	path = ROOTChickenBonds/lib/forge-std
 	url = https://github.com/brockelmore/forge-std
-[submodule "LUSDChickenBonds/lib/b-protocol"]
-	path = LUSDChickenBonds/lib/b-protocol
+[submodule "ROOTChickenBonds/lib/b-protocol"]
+	path = ROOTChickenBonds/lib/b-protocol
 	url = https://github.com/backstop-protocol/dev
-[submodule "LUSDChickenBonds/lib/datetime"]
-	path = LUSDChickenBonds/lib/datetime
+[submodule "ROOTChickenBonds/lib/datetime"]
+	path = ROOTChickenBonds/lib/datetime
 	url = https://github.com/bokkypoobah/BokkyPooBahsDateTimeLibrary
-[submodule "LUSDChickenBonds/lib/Beanstalk"]
-	path = LUSDChickenBonds/lib/Beanstalk
+[submodule "ROOTChickenBonds/lib/Beanstalk"]
+	path = ROOTChickenBonds/lib/Beanstalk
 	url = https://github.com/BeanstalkFarms/Beanstalk
 [submodule "ROOTChickenBonds/ROOTChickenBonds/lib/Beanstalk"]
 	path = ROOTChickenBonds/ROOTChickenBonds/lib/Beanstalk
