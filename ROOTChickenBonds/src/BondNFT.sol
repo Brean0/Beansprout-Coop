@@ -6,6 +6,7 @@ import "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-contracts/contracts/access/Ownable.sol";
 import "openzeppelin-contracts/contracts/utils/math/Math.sol";
 import "./Interfaces/IBondNFT.sol";
+import "./utils/Base64.sol";
 
 //import "forge-std/console.sol";
 
@@ -61,21 +62,21 @@ contract BondNFT is ERC721Enumerable, Ownable, IBondNFT {
     }
 
     // Prevent transfers for a period of time after chickening in or out
-    function _beforeTokenTransfer(address _from, address _to, uint256 _bondId) internal virtual override {
+    function _beforeTokenTransfer(address _from, address _to, uint256 _bondId) internal virtual {
         if (_from != address(0)) {
-            (,,, uint256 endTime, uint8 status) = chickenBondManager.getBondData(_bondId);
+            IChickenBondManager.BondData memory _tmpBondData = chickenBondManager.getBondData(_bondId);
 
             require(
-                status == uint8(IChickenBondManager.BondStatus.active) ||
-                block.timestamp >= endTime + TRANSFER_LOCKOUT_PERIOD,
+                _tmpBondData.status == IChickenBondManager.BondStatus.active ||
+                block.timestamp >= _tmpBondData.endTime + TRANSFER_LOCKOUT_PERIOD,
                 "BondNFT: cannot transfer during lockout period"
             );
         }
 
-        super._beforeTokenTransfer(_from, _to, _bondId);
+        super._beforeTokenTransfer(_from, _to, _bondId,1);
     }
 
-    function tokenURI(uint256 _bondId) external view virtual override returns (string memory) {
+    function tokenURI(uint256 _bondId) public view virtual override returns (string memory) {
         require(_exists(_bondId), "ERC721Metadata: URI query for nonexistent token");
         string memory name = string(abi.encodePacked(' Beansprout Bond #', toString(_bondId)));
         string memory description = "Beansprout Coop";
@@ -102,24 +103,34 @@ contract BondNFT is ERC721Enumerable, Ownable, IBondNFT {
         );
     }
 
-    function getBondAmount(uint256 _bondId) external view returns (uint256 amount) {
-        (amount,,,,) = chickenBondManager.getBondData(_bondId);
+    function getBondAmount(uint256 _bondId) public view returns (uint256 amount) {
+        IChickenBondManager.BondData memory _tmpBondData = chickenBondManager.getBondData(_bondId);
+        return _tmpBondData.amount;
     }
 
-    function getBondClaimedBLUSD(uint256 _bondId) external view returns (uint256 claimedBBEAN) {
-        (,claimedBBEAN,,,) = chickenBondManager.getBondData(_bondId);
+    function getBondRootBDV(uint256 _bondId) external view returns (uint256 rootBDV) {
+        IChickenBondManager.BondData memory _tmpBondData = chickenBondManager.getBondData(_bondId);
+        return _tmpBondData.rootBDV;
     }
 
-    function getBondStartTime(uint256 _bondId) external view returns (uint256 startTime) {
-        (,,startTime,,) = chickenBondManager.getBondData(_bondId);
+    function getBondStartTime(uint256 _bondId) public view returns (uint256 startTime) {
+        IChickenBondManager.BondData memory _tmpBondData = chickenBondManager.getBondData(_bondId);
+        return _tmpBondData.startTime;
+    }
+
+    function getBondStatus(uint256 _bondId) public view returns (IChickenBondManager.BondStatus status) {
+        IChickenBondManager.BondData memory _tmpBondData = chickenBondManager.getBondData(_bondId);
+        return _tmpBondData.status;
     }
 
     function getBondEndTime(uint256 _bondId) external view returns (uint256 endTime) {
-        (,,, endTime,) = chickenBondManager.getBondData(_bondId);
+        IChickenBondManager.BondData memory _tmpBondData = chickenBondManager.getBondData(_bondId);
+        return _tmpBondData.endTime;
     }
 
-    function getBondStatus(uint256 _bondId) external view returns (uint8 status) {
-        (,,,, status) = chickenBondManager.getBondData(_bondId);
+    function getBondClaimedBRoot(uint256 _bondId) public view returns (uint256 claimedBRoot) {
+        IChickenBondManager.BondData memory _tmpBondData = chickenBondManager.getBondData(_bondId);
+        return _tmpBondData.claimedBRoot;
     }
 
     function generateBase64Image(uint256 _bondId) internal view returns (string memory) {
@@ -127,38 +138,52 @@ contract BondNFT is ERC721Enumerable, Ownable, IBondNFT {
     }
 
     function generateImage(uint256 _bondId) internal view returns (string memory) {
-        // get bond data 
-        BondData memory _bond = bondData[_bondId];
         // get the hash as a function of both start time and bondId
-        uint256 __bondId = uint(keccak256(abi.encodePacked(_bond.startTime, _bondId)));
+        IChickenBondManager.BondData memory _tmpBond;
+        _tmpBond = chickenBondManager.getBondData(_bondId);        
+        uint256 __bondId = uint(keccak256(abi.encodePacked(_tmpBond.startTime, _bondId)));
         bytes memory hash = abi.encodePacked(bytes32(__bondId));
         uint256 pIndex = toUint8(hash,0)/16; // 16 palettes
-
+        
         /* this is broken into functions to avoid stack too deep errors */
+        // im so sorry
         string memory paletteSection = generatePaletteSection(__bondId, pIndex);
-
+        string memory quote = generateQuote();
+        string memory status = generateStatus(uint256(_tmpBond.status));
+        string memory claimedBRoot = generateclaimedBRoot(_tmpBond.claimedBRoot);
+        string memory ID = generateID(_bondId);
         return string(
             abi.encodePacked(
                 '<svg class="svgBody" width="270" height="210" viewBox="0 0 270 210" xmlns="http://www.w3.org/2000/svg">',
                 paletteSection,
-                '<text x="175" y="80" class="small">BEAN SPROUT</text>',
-                '<text x="15" y="80" class="medium">ID> ', toString(_bondId),'</text>',
-                '<text x="15" y="100" class="medium">STATUS:</text>',
-                '<rect x="15" y="105" width="120" height="20" style="fill:white;opacity:0.5"/>',
-                '<text x="15" y="120" class="medium">',_status[uint256(_bond.status)],'</text>',
-                '<text x="15" y="145" class="small">BONDED ROOTS:</text>',
-                '<text x="110" y="145" class="small" opacity="0.75">', toString(uint256(_bond.amount)),'</text>',
-                '<text x="15" y="160" class="small">BROOT GAINED:</text>',
-                '<text x="110" y="160" class="small" opacity="0.75">', toString(uint256(_bond.claimedBRoot)), '</text>',
-                '<text x="15" y="180" class="tiny">A national debt, if it is not excessive,</text>',
-                '<text x="15" y="190" class="tiny">will be to us a national blessing.</text>',
-                '<text x="15" y="200" class="tiny">- Alexander Hamilton, Letter to Robert Morris, April 30, 1781</text>',
-                '<style>.svgBody {font-family: "Courier New" } .tiny {font-size:6px; } .small {font-size: 12px;}.medium {font-size: 18px;}</style>',
-                '</svg>'
+                '<text x="175" y="80" class="small">BEAN SPROUT</text><text x="15" y="100" class="medium">STATUS:</text>',
+                ID,
+                '<rect x="15" y="105" width="120" height="20" style="fill:white;opacity:0.5"/></text>',
+                status,
+                '</text><text x="110" y="145" class="small" opacity="0.75">', toString(_tmpBond.amount),
+                '</text><text x="15" y="160" class="small">BROOT GAINED:</text><text x="15" y="145" class="small">BONDED ROOTS:</text>',
+                claimedBRoot,
+                quote
             )
         );
     }
+    
+    function generateStatus(uint256 status) internal pure returns (string memory) {
+       return string(abi.encodePacked('<text x="15" y="120" class="medium">',status, '</text>'));
+    }
 
+    function generateID(uint256 bondID) internal pure returns (string memory) {
+       return string(abi.encodePacked(
+        '<text x="15" y="80" class="medium">ID> ', 
+        toString(bondID),
+        '</text>'
+        ));
+    }
+
+    function generateclaimedBRoot(uint256 claimedBRoot) internal pure returns (string memory) {
+       return string(abi.encodePacked('<text x="110" y="160" class="small" opacity="0.75">', toString(claimedBRoot), '</text>'));
+    }
+    
     function requireCallerIsChickenBondsManager() internal view {
         require(msg.sender == address(chickenBondManager), "BondNFT: Caller must be ChickenBondManager");
     }
@@ -178,6 +203,17 @@ contract BondNFT is ERC721Enumerable, Ownable, IBondNFT {
                 '<path d="M34.9755 2.30389L129.327 57.5039L224.063 2.30389L255.097 20.736L129.327 93.0239L4.32568 20.736L34.9755 2.30389Z" fill="#40845F"/>',
                 '<path d="M129.327 93.0237V239.52L160.938 221.28V110.304L255.097 57.5997V20.7357L129.327 93.0237Z" fill="#00F97C"/>',
                 '<path d="M129.327 93.0237V239.52L97.7149 221.28V110.304L3.55615 57.5997V20.7357L129.327 93.0237Z" fill="#05301C"/></svg>'
+            )
+        );
+    }
+
+    function generateQuote() internal pure returns (string memory) {
+        return string(abi.encodePacked(
+                '</text><text x="15" y="180" class="tiny">A national debt, if it is not excessive,</text>',
+                '<text x="15" y="190" class="tiny">will be to us a national blessing.</text>',
+                '<text x="15" y="200" class="tiny">- Alexander Hamilton, Letter to Robert Morris, April 30, 1781</text>',
+                '<style>.svgBody {font-family: "Courier New" } .tiny {font-size:6px; } .small {font-size: 12px;}.medium {font-size: 18px;}</style>',
+                '</svg>'
             )
         );
     }

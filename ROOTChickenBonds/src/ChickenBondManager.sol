@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity <0.8.10;
+pragma solidity >=0.4.23 <0.9.0;
 
 import "openzeppelin-contracts/contracts/utils/math/Math.sol";
 import "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
@@ -16,22 +16,25 @@ import "./Interfaces/ICurveLiquidityGaugeV5.sol";
 // current todos: 
 contract ChickenBondManager is ChickenMath, IChickenBondManager {
 
+
      // External contracts and addresses
     address private constant BEANSTALK = 0xC1E088fC1323b20BCBee9bd1B9fC9546db5624C5;
     address private constant BSM = 0x21DE18B6A8f78eDe6D16C50A167f6B222DC08DF7;
     address private constant ROOTTOKEN = 0x77700005BEA4DE0A78b956517f099260C2CA9a26;
-    address private constant BROOT = 0x0;
-    address private constant BONDNFT = 0x0;
+    address private constant BROOT = 0xC1E088fC1323b20BCBee9bd1B9fC9546db5624C5;
+    address private constant BONDNFT = 0xC1E088fC1323b20BCBee9bd1B9fC9546db5624C5;
+    address private constant CURVE_GAUGE = 0xC1E088fC1323b20BCBee9bd1B9fC9546db5624C5;
 
     // ChickenBonds contracts and addresses
-    IBondNFT public constant bondNFT = IBondNFT(0x0);
-    IBRoot public constant bRoot = IBRoot(0x0);
+    IBondNFT public constant bondNFT = IBondNFT(BONDNFT);
+    IBRoot public constant bRoot = IBRoot(BROOT);
     IRoot public constant rootToken = IRoot(ROOTTOKEN);
     IBeanstalk public constant beanstalk = IBeanstalk(BEANSTALK);
+    ICurveLiquidityGaugeV5 public constant curveLiquidityGauge = ICurveLiquidityGaugeV5(CURVE_GAUGE);
    
 
     // TODO: determine if needed for Beanstalk (3% in liquity)
-    // the chicken in fee incentivizes bROOT-BEAN3CRV LP 
+    // the chicken in fee incentivizes bRoot-BEAN3CRV LP 
     // the fee could be removed in a couple of ways: 
     // 2: We ask bean sprout for a grant for the fee
     uint256 public CHICKEN_IN_AMM_FEE;
@@ -53,19 +56,8 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         uint256 bootstrapPeriodRedeem;          // Redemption lock period after first chicken in
         uint256 minbRootSupply;                 // Minimum amount of bRoot supply that must remain after a redemption
         uint256 minBondAmount;                  // Minimum amount of ROOT that needs to be bonded
-    }
-
-    /// @dev sadly we must use 2 slots
-    // first 4 vars are written at createBond
-    // last 3 vars are written at chickenIn/Out
-    // we place bondstatus in the first slot as writing a nonzero to a zero slot costs more 
-    struct BondData {
-        uint112 amount; // Root in bond; very unlikely that a bond will contain > uint112.max ()
-        uint96 rootBDV; // Root BDV during time of creation
-        uint40 startTime; // Start time of bond; uint40 is more than big enough to store
-        Bondstatus status; // status of Bond
-        uint40 endTime; // End time of bond; same as above
-        uint216 claimedBRoot; // Amt of bBEAN claimed (without decimals)
+        uint256 redemptionFeeBeta;              // Parameter by which to divide the redeemed fraction, in order to calculate the new base rate from a redemption
+        uint256 redemptionFeeMinuteDecayFactor; // Factor by which redemption fee decays (exponentially) every minute
     }
 
     /// @dev lastBDV and reserve are packed into 1 slot as they are updated in the same call
@@ -104,15 +96,15 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
 
     uint256 public immutable BOOTSTRAP_PERIOD_CHICKEN_IN; // Min duration of first chicken-in
     uint256 public immutable BOOTSTRAP_PERIOD_REDEEM;     // Redemption lock period after first chicken in
-    uint256 public immutable BOOTSTRAP_PERIOD_SHIFT;      // Period after launch during which shifter functions are disabled
+    //uint256 public immutable BOOTSTRAP_PERIOD_SHIFT;      // Period after launch during which shifter functions are disabled
     uint256 public immutable MIN_BROOT_SUPPLY;            // Minimum amount of bRoot supply that must remain after a redemption
     uint256 public immutable MIN_BOND_AMOUNT;             // Minimum amount of LUSD that needs to be bonded
     // This is the minimum amount the permanent bucket needs to be increased by an attacker (through previous chicken in or redemption fee),
     // in order to manipulate the obtained NFT. If the attacker finds the desired outcome at attempt N,
     // the permanent increase should be N * NFT_RANDOMNESS_DIVISOR.
     // It also means that as long as Permanent doesn’t change in that order of magnitude, attacker can try to manipulate
-    // only changing the event date.
-    uint256 public immutable NFT_RANDOMNESS_DIVISOR;
+    // only changing the event.
+    //uint256 public immutable NFT_RANDOMNESS_DIVISOR;
 
     /*
      * BETA: 18 digit decimal. Parameter by which to divide the redeemed fraction, in order to calc the new base rate from a redemption.
@@ -150,7 +142,7 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
 
     event BaseRedemptionRateUpdated(uint256 _baseRedemptionRate);
     event LastRedemptionTimeUpdated(uint256 _lastRedemptionFeeOpTime);
-    event BondCreated(address indexed bonder, uint256 bondId, uint128 amount, uint80 bondInitialHalfDna);
+    event BondCreated(address indexed bonder, uint256 bondId, uint256 amount);
     event BondClaimed(
         address indexed bonder,
         uint256 bondId,
@@ -158,19 +150,17 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         uint256 bRootAmount,
         uint256 rootSurplus,
         uint256 chickenInFeeAmount,
-        bool migration,
-        uint80 bondFinalHalfDna
+        bool migration
     );
     event BondCancelled(
         address indexed bonder, 
         uint256 bondId, 
-        uint256 withdrawnRootAmount, 
-        uint80 bondFinalHalfDna
+        uint256 withdrawnRootAmount
     );
     event BRootRedeemed(
         address indexed redeemer, 
-        uint256 bBeanAmount, 
-        uint256 bean3CRVAmount
+        uint256 bRootAmount,
+        uint256 reserveRootToRedeem
     );
     event MigrationTriggered(uint256 previousPermanentROOT);
     event AccrualParameterUpdated(uint256 accrualParameter);
@@ -185,9 +175,9 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         require(minimumAccrualParameter > 0, "CBM: Min accrual parameter cannot be zero");
         accrualAdjustmentMultiplier = 1e18 - _params.accrualAdjustmentRate;
         accrualAdjustmentPeriodSeconds = _params.accrualAdjustmentPeriodSeconds;
-        curveLiquidityGauge = ICurveLiquidityGaugeV5(_externalContractAddresses.curveLiquidityGaugeAddress); // needed?
+        //curveLiquidityGauge = ICurveLiquidityGaugeV5(_externalContractAddresses.curveLiquidityGaugeAddress); // needed?
         CHICKEN_IN_AMM_FEE = _params.chickenInAMMFee;
-        uint256 fee = curvePool.fee(); // This is practically immutable (can only be set once, in `initialize()`)
+        //uint256 fee = curvePool.fee(); // This is practically immutable (can only be set once, in `initialize()`)
         BOOTSTRAP_PERIOD_CHICKEN_IN = _params.bootstrapPeriodChickenIn;
         BOOTSTRAP_PERIOD_REDEEM = _params.bootstrapPeriodRedeem;
         MIN_BROOT_SUPPLY = _params.minbRootSupply;
@@ -195,7 +185,6 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         MIN_BOND_AMOUNT = _params.minBondAmount;
         BETA = _params.redemptionFeeBeta;
         MINUTE_DECAY_FACTOR = _params.redemptionFeeMinuteDecayFactor;
-
         //max approvals
         rootToken.approve(address(curveLiquidityGauge), MAX_UINT256);
         rootToken.approve(address(beanstalk), MAX_UINT256);
@@ -205,9 +194,9 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
 
     // Farmer deposits Root, gets an claim via an NFT
     // Root can be from circulating balances, or in the farmer balances
+    // BALANCE MUST BE INTERNAL, USE PIPELINE TO BRING IT TO INTERNAL
     function createBond(
-        uint128 _amount, 
-        LibTransfer.From fromMode
+        uint256 _amount 
     ) public returns (uint256) {
         //check requires
         _requireMinBond(_amount);
@@ -219,8 +208,8 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         
         // create BondData Struct
         BondData memory bondData;
-        bondData.amount = _amount;
-        bondData.rootBDV = uint96(root.bdvPerRoot());
+        bondData.amount = uint112(_amount);
+        bondData.rootBDV = uint96(rootToken.bdvPerRoot());
         bondData.startTime = uint40(block.timestamp);
         bondData.status = BondStatus.active;
         idToBondData[bondID] = bondData;
@@ -228,13 +217,12 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         //update pending and transfer Roots
         totalWeightedStartTimes += _amount * block.timestamp; 
         rootBucket.pending += _amount;
-        beanstalk.transferTokenFrom(
+        beanstalk.transferInternalTokenFrom(
             IERC20(rootToken), 
-            msg.sender(), 
+            msg.sender, 
             address(this), 
             _amount, 
-            fromMode, 
-            LibTransfer.To.INTERNAL
+            To.INTERNAL
         );
 
         emit BondCreated(msg.sender, bondID, _amount);
@@ -255,11 +243,11 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         if (asset.allowance(owner, address(this)) < amount) {
             asset.permit(owner, address(this), amount, deadline, v, r, s);
         }
-        return createBondExternal(_token, amount);
+        return createBond(amount);
     }
 
     // Farmer chickens out, forfeiting yield and the claim to bRoot.
-    function chickenOut(uint256 _bondID, uint256 _minROOT, LibTransfer.To toMode) external {
+    function chickenOut(uint256 _bondID, uint256 _minROOT, To toMode) external {
         BondData memory bond = idToBondData[_bondID];
 
         _requireCallerOwnsBond(_bondID);
@@ -286,32 +274,30 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         require(_minROOT >= cknAmount, "CBM: root gained is less than minROOT");
         totalWeightedStartTimes -= bond.amount * bond.startTime;
         rootBucket.pending -= bond.amount;
-        rootBucket.reserve += bond.amount - cknAmount;
+        rootBucket.reserve += uint160(bond.amount - cknAmount);
 
         //transfer to user wallet, internal or external
-        beanstalk.transferTokenFrom(
+        beanstalk.transferInternalTokenFrom(
             IERC20(rootToken), 
             address(this), 
             msg.sender,
             cknAmount, 
-            LibTransfer.From.INTERNAL,
             toMode
         );
         
-        emit BondCancelled(msg.sender, _bondID, cknAmount, newDna);
+        emit BondCancelled(msg.sender, _bondID, cknAmount);
     }
 
     // Transfers ROOT to the bRoot/ROOT AMM LP Rewards staking contract.
     function transferToCurve(uint256 rootTokenToTransfer) internal {
 
         // Transfer roots from internal balances to external balances
-        beanstalk.transferTokenFrom(
+        beanstalk.transferInternalTokenFrom(
             IERC20(rootToken), 
             address(this), 
             address(this),
-            cknAmount, 
-            LibTransfer.From.INTERNAL,
-            LibTransfer.To.EXTERNAL
+            rootTokenToTransfer, 
+            To.EXTERNAL
         );
         // deposit into liquidty reward
         curveLiquidityGauge.deposit_reward_token(ROOTTOKEN, rootTokenToTransfer);
@@ -335,8 +321,8 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         * any earned yield to the bRoot-LUSD AMM for fairness.
         * This is not done in migration mode since there is no need to send rewards to the staking contract.
         */
-        if (bROOT.totalSupply() == 0 && !migration) {
-            require(block.timestamp >= _bondStartTime + BOOTSTRAP_PERIOD_CHICKEN_IN, "CBM: First chicken in must wait until bootstrap period is over");
+        if (bRoot.totalSupply() == 0 && !migration) {
+            require(block.timestamp >= bond.startTime + BOOTSTRAP_PERIOD_CHICKEN_IN, "CBM: First chicken in must wait until bootstrap period is over");
             firstChickenInTime = block.timestamp;
             transferToCurve(yield);
             // since yield is given to curve, none is given to reserve
@@ -352,11 +338,11 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
 
         idToBondData[_bondID].claimedBRoot = uint216(Math.min(accruedBRoot / 1e18, type(uint216).max)); // to units and uint64
         idToBondData[_bondID].status = BondStatus.chickenedIn;
-        idToBondData[_bondID].endTime = uint64(block.timestamp);
-        uint256 permanentBucket = 
-            rootToken.balanceOf(address(this)) 
-            - rootBucket.pending 
-            - rootBucket.reserve;
+        idToBondData[_bondID].endTime = uint40(block.timestamp);
+        // uint256 permanentBucket = 
+        //     rootToken.balanceOf(address(this)) 
+        //     - rootBucket.pending 
+        //     - rootBucket.reserve;
         //uint80 newDna = bondNFT.setFinalExtraData(msg.sender, _bondID, permanentBucket / NFT_RANDOMNESS_DIVISOR);
 
         countChickenIn += 1;
@@ -364,41 +350,40 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         // subtract from pending, add to reserve
         // implicitly adds to permanent
         rootBucket.pending -= bond.amount;
-        rootBucket.reserve += rootToAcquire + yield;
+        rootBucket.reserve += uint160(rootToAcquire + yield);
         totalWeightedStartTimes -= bond.amount * bond.startTime;
-
+        uint256 rootSurplus;
         // Transfer the chicken in fee to the LUSD/bRoot AMM LP Rewards staking contract during normal mode.
         // In migration mode, transfer surplus back to bonder
         if (!migration) { 
             transferToCurve(chickenInFeeAmount);
         } else {
             // Get the remaining surplus from the LUSD amount to acquire from the bond
-            uint256 rootSurplus = bondAmountMinusChickenInFee - rootToAcquire; 
+            rootSurplus = bondAmountMinusChickenInFee - rootToAcquire; 
                 if (rootSurplus > 0) {
-                beanstalk.transferTokenFrom(
+                beanstalk.transferInternalTokenFrom(
                     IERC20(rootToken),  
                     address(this),
-                    msg.sender(), 
+                    msg.sender, 
                     rootSurplus, 
-                    LibTransfer.To.INTERNAL, 
-                    LibTransfer.To.INTERNAL
+                    To.INTERNAL
                 );
             }
         }
-        bROOT.mint(msg.sender, accruedBRoot);           
+        bRoot.mint(msg.sender, accruedBRoot);           
         // TODO: convert season deposit with the reserve season, 
-        emit BondClaimed(msg.sender, _bondID, bond.amount, accruedBRoot, rootSurplus, chickenInFeeAmount, migration, newDna);
+        emit BondClaimed(msg.sender, _bondID, bond.amount, accruedBRoot, rootSurplus, chickenInFeeAmount, migration);
     }
 
     // Farmer redeems Root for bRoot. 
-    function redeem(uint256 _bRootToRedeem, LibTransfer.To toMode) external returns (uint256, uint256) {
+    function redeem(uint256 _bRootToRedeem, To toMode) external returns (uint256) {
         _requireNonZeroAmount(_bRootToRedeem);
         _requireRedemptionNotDepletingbRoot(_bRootToRedeem);
 
         require(block.timestamp >= firstChickenInTime + BOOTSTRAP_PERIOD_REDEEM, "CBM: Redemption after first chicken in must wait until bootstrap period is over");
 
 
-        uint256 fractionOfBRootToRedeem = _bRootToRedeem * 1e18 / bROOT.totalSupply();
+        uint256 fractionOfBRootToRedeem = _bRootToRedeem * 1e18 / bRoot.totalSupply();
         
         // I believe this changes the alpha, but not sure how this works with the redemption fee
         //uint256 redemptionFeePercentage = migration ? 0 : _updateRedemptionFeePercentage(fractionOfBRootToRedeem);
@@ -406,24 +391,22 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         _requireNonZeroAmount(rootBucket.reserve);
 
         // Burn the redeemed bRoot
-        bROOT.burn(msg.sender, _bRootToRedeem);
+        bRoot.burn(msg.sender, _bRootToRedeem);
 
-        { // Block scoping to avoid stack too deep issues
-            uint256 reserveRootToRedeem = rootBucket.reserve * fractionOfBRootToRedeem / 1e18;
+        uint256 reserveRootToRedeem = rootBucket.reserve * fractionOfBRootToRedeem / 1e18;
 
-            if (reserveRootToRedeem > 0){
-                beanstalk.transferTokenFrom(
-                    IERC20(rootToken),
-                    address(this), 
-                    msg.sender, 
-                    reserveRootToRedeem, 
-                    _INTERNAL, 
-                    toMode
-                );
-            }             
-        }
+        if (reserveRootToRedeem > 0){
+            beanstalk.transferInternalTokenFrom(
+                IERC20(rootToken),
+                address(this), 
+                msg.sender, 
+                reserveRootToRedeem, 
+                toMode
+            );
+        }             
 
-        rootBucket.reserve -= reserveRootToRedeem;
+
+        rootBucket.reserve -= uint160(reserveRootToRedeem);
         emit BRootRedeemed(msg.sender, _bRootToRedeem, reserveRootToRedeem);
 
         return (reserveRootToRedeem);
@@ -439,12 +422,12 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         
         // add yield to reserve bucket
         // this implicitly removes from the permanent
-        rootBucket.reserve += permanent - RootBDVRatio * permanent/1e18;
+        rootBucket.reserve += uint160(permanent - RootBDVRatio * permanent/1e18);
     }
 
     // outputs the ratio of the bond BDV and the current root BDV
     function bondBDVRatio(uint256 rootBDV) internal view returns (uint256){
-        uint256 currentBDV = root.bdvPerRoot();
+        uint256 currentBDV = rootToken.bdvPerRoot();
         return rootBDV * 1e18 / currentBDV;
     }
 
@@ -456,19 +439,20 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
     function activateMigration() external {
         _requireMigrationNotActive();
         migration = true;
-        emit MigrationTriggered(permanentBEAN);
+        uint256 total = rootToken.balanceOf(address(this));
+        uint256 permanent = total - rootBucket.pending - rootBucket.reserve;
+        emit MigrationTriggered(permanent);
     }
 
-    function transferPermanentToBeanSprout() external {
+    function transferPermanentToBeanSprout(uint256 _amount) external {
         _requireCallerIsBeanSproutGovernance();
         if (migration) {
-            beanstalk.transferTokenFrom(
+            beanstalk.transferInternalTokenFrom(
                 IERC20(rootToken), 
                 address(this), 
                 BSM,
                 _amount, 
-                fromMode, 
-                LibTransfer.To.INTERNAL
+                To.INTERNAL
             );
         }
 
@@ -677,7 +661,7 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
     }
 
     function _requireNonZeroBBEANSupply() internal view {
-        require(bROOT.totalSupply() > 0, "CBM: bRoot Supply must be > 0 upon shifting");
+        require(bRoot.totalSupply() > 0, "CBM: bRoot Supply must be > 0 upon shifting");
     }
 
     function _requireMinBond(uint256 _beanAmount) internal view {
@@ -688,7 +672,7 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
     function _requireRedemptionNotDepletingbRoot(uint256 _bRootToRedeem) internal view {
         if (!migration) {
             //require(_bRootToRedeem < bRootTotalSupply, "CBM: Cannot redeem total supply");
-            require(_bRootToRedeem + MIN_BROOT_SUPPLY <= bROOT.totalSupply(), "CBM: Cannot redeem below min supply");
+            require(_bRootToRedeem + MIN_BROOT_SUPPLY <= bRoot.totalSupply(), "CBM: Cannot redeem below min supply");
         }
     }
 
@@ -707,16 +691,11 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         external
         view
         returns (
-            uint112 amount, 
-            uint96 rootBDV, 
-            uint40 startTime, 
-            Bondstatus status, 
-            uint40 endTime, 
-            uint216 claimedBRoot 
+            BondData memory bond
         )
     {
-        BondData memory bond = idToBondData[_bondID];
-        return (bond.amount, bond.rootBDV, bond.startTime, uint8(bond.status), bond.endTime, bond.claimedBRoot);
+       return idToBondData[_bondID];
+        //return (bond.amount, bond.rootBDV, bond.startTime, uint8(bond.status), bond.endTime, bond.claimedBRoot);
     }
 
     // outputs how much ROOT that would be allocated to reserve bucket
@@ -724,10 +703,10 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         BondData memory bond = idToBondData[_bondID];
         (uint256 updatedAccrualParameter, ) = _calcUpdatedAccrualParameter(accrualParameter, accrualAdjustmentPeriodCount);
 
-        return _calcAccruedAmount(bond.startTime, _getBondAmountMinusChickenInFee(bond.beanAmount), updatedAccrualParameter);
+        return _calcAccruedAmount(bond.startTime, _getBondAmountMinusChickenInFee(bond.amount), updatedAccrualParameter);
     }
 
-    // output the bROOT currently accrued
+    // output the bRoot currently accrued
     function calcAccruedBRoot(uint256 _bondID) external view returns (uint256) {
         BondData memory bond = idToBondData[_bondID];
 
@@ -741,19 +720,19 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
         return _calcAccruedAmount(bond.startTime, bondBRootCap, updatedAccrualParameter);
     }
 
-    // outputs the maximum bROOT given bondID
+    // outputs the maximum bRoot given bondID
     function calcBondBRootCap(uint256 _bondID) external view returns (uint256) {
         uint256 backingRatio = calcSystemBackingRatio();
         BondData memory bond = idToBondData[_bondID];
-        return _calcBondBRootCap(_getBondAmountMinusChickenInFee(bond.beanAmount), backingRatio);
+        return _calcBondBRootCap(_getBondAmountMinusChickenInFee(bond.amount), backingRatio);
     }
 
     // outputs the backing ratio (roots in reserve / )
     function calcSystemBackingRatio() public view returns (uint256) {
-        uint256 totalBRootSupply = bROOT.totalSupply();
+        uint256 totalBRootSupply = bRoot.totalSupply();
         // before the first chickenIn, return a backing ratio of 1.
         // also when the bRoot supply is fully redeemed.
-        if (totalBRootSupply == 0) {return 1e18};
+        if (totalBRootSupply == 0) return 1e18;
         return  rootBucket.reserve * 1e18  / totalBRootSupply;
     }
 
@@ -767,27 +746,27 @@ contract ChickenBondManager is ChickenMath, IChickenBondManager {
     }
 
     function getReserves() external view returns(uint256,uint160,uint96,uint256) {
-        tmpRootBucket = rootBucket;
+        BucketData memory tmpRootBucket = rootBucket;
         uint256 permanent = rootToken.balanceOf(address(this)) - tmpRootBucket.pending - tmpRootBucket.reserve;
         return(
             tmpRootBucket.pending,
             tmpRootBucket.reserve,
             tmpRootBucket.lastBDV,
             permanent
-        )
+        );
     }
 
     function permanentRoot() external view returns (uint256) {
-        tmpRootBucket = rootBucket;
+        BucketData memory tmpRootBucket = rootBucket;
         return rootToken.balanceOf(address(this)) - tmpRootBucket.pending - tmpRootBucket.reserve;
     }
 
     function totalAcquiredRoot() external view returns (uint256) {
-        rootToken.balanceOf(address(this));
+        return rootToken.balanceOf(address(this));
     }
 
     function pendingRoot() external view returns (uint256){
-        tmpRootBucket = rootBucket;
+        BucketData memory tmpRootBucket = rootBucket;
         return tmpRootBucket.pending;
     }
 

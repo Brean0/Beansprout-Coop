@@ -1,0 +1,7 @@
+Beanstalk/=lib/Beanstalk/protocol/contracts
+b-protocol/=lib/b-protocol/
+datetime/=lib/datetime/
+ds-test/=lib/forge-std/lib/ds-test/src/
+erc4626-tests/=lib/openzeppelin-contracts/lib/erc4626-tests/
+forge-std/=lib/forge-std/src/
+openzeppelin-contracts/=lib/openzeppelin-contracts/

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.10;
+pragma solidity >=0.4.23 <0.9.0;
 
 import "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
-interface IBEANToken is IERC20 { 
+interface IRoot is IERC20 { 
     
     // --- Events ---
 
@@ -31,4 +31,6 @@ interface IBEANToken is IERC20 {
         bytes32 r,
         bytes32 s
     ) external;
+
+    function bdvPerRoot() external view returns (uint256);
 }
