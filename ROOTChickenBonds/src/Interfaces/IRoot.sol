@@ -4,13 +4,7 @@ pragma solidity >=0.4.23 <0.9.0;
 import "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 interface IRoot is IERC20 { 
-    
-    // --- Events ---
 
-    event TroveManagerAddressChanged(address _troveManagerAddress);
-    event StabilityPoolAddressChanged(address _newStabilityPoolAddress);
-    event BorrowerOperationsAddressChanged(address _newBorrowerOperationsAddress);
-    event LUSDTokenBalanceUpdated(address _user, uint _amount);
 
     // --- Functions ---
 

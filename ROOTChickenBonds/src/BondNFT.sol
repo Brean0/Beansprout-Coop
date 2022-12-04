@@ -152,16 +152,17 @@ contract BondNFT is ERC721Enumerable, Ownable, IBondNFT {
         string memory status = generateStatus(uint256(_tmpBond.status));
         string memory claimedBRoot = generateclaimedBRoot(_tmpBond.claimedBRoot);
         string memory ID = generateID(_bondId);
+        string memory amt = generateAmount(_tmpBond.amount);
         return string(
             abi.encodePacked(
                 '<svg class="svgBody" width="270" height="210" viewBox="0 0 270 210" xmlns="http://www.w3.org/2000/svg">',
                 paletteSection,
                 '<text x="175" y="80" class="small">BEAN SPROUT</text><text x="15" y="100" class="medium">STATUS:</text>',
                 ID,
-                '<rect x="15" y="105" width="120" height="20" style="fill:white;opacity:0.5"/></text>',
+                '<rect x="15" y="105" width="120" height="20" style="fill:white;opacity:0.5"/>',
                 status,
-                '</text><text x="110" y="145" class="small" opacity="0.75">', toString(_tmpBond.amount),
-                '</text><text x="15" y="160" class="small">BROOT GAINED:</text><text x="15" y="145" class="small">BONDED ROOTS:</text>',
+                amt,
+                '<text x="15" y="160" class="small">BROOT GAINED:</text><text x="15" y="145" class="small">BONDED ROOTS:</text>',
                 claimedBRoot,
                 quote
             )
@@ -169,7 +170,19 @@ contract BondNFT is ERC721Enumerable, Ownable, IBondNFT {
     }
     
     function generateStatus(uint256 status) internal pure returns (string memory) {
-       return string(abi.encodePacked('<text x="15" y="120" class="medium">',status, '</text>'));
+       return string(abi.encodePacked(
+        '<text x="15" y="120" class="medium">',
+        toString(status), 
+        '</text>'
+        ));
+    }
+
+    function generateAmount(uint256 amount) internal pure returns (string memory) {
+       return string(abi.encodePacked( 
+        '<text x="110" y="145" class="small" opacity="0.75">', 
+        toString(amount),
+        '</text>'
+        ));
     }
 
     function generateID(uint256 bondID) internal pure returns (string memory) {
@@ -209,7 +222,7 @@ contract BondNFT is ERC721Enumerable, Ownable, IBondNFT {
 
     function generateQuote() internal pure returns (string memory) {
         return string(abi.encodePacked(
-                '</text><text x="15" y="180" class="tiny">A national debt, if it is not excessive,</text>',
+                '<text x="15" y="180" class="tiny">A national debt, if it is not excessive,</text>',
                 '<text x="15" y="190" class="tiny">will be to us a national blessing.</text>',
                 '<text x="15" y="200" class="tiny">- Alexander Hamilton, Letter to Robert Morris, April 30, 1781</text>',
                 '<style>.svgBody {font-family: "Courier New" } .tiny {font-size:6px; } .small {font-size: 12px;}.medium {font-size: 18px;}</style>',
